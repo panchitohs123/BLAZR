@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCartStore } from "@/lib/store"
 import type { Product, CartItemModifier, ModifierGroup } from "@/lib/types"
 import { toast } from "sonner"
@@ -93,7 +92,7 @@ export function ProductModal({ product, allModifierGroups, open, onClose }: Prod
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden bg-card border-border rounded-2xl max-h-[90vh]">
+      <DialogContent className="grid max-h-[90vh] max-w-lg grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-2xl border-border bg-card p-0">
         <div className="relative aspect-video overflow-hidden">
           <Image
             src={product.image}
@@ -102,10 +101,25 @@ export function ProductModal({ product, allModifierGroups, open, onClose }: Prod
             className="object-cover"
             sizes="(max-width: 640px) 100vw, 512px"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 via-28% to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 p-5">
+            <DialogTitle
+              className="text-3xl font-bold tracking-tight text-white sm:text-4xl"
+              style={{ fontFamily: "var(--font-heading)" }}
+            >
+              {product.name}
+            </DialogTitle>
+            <p className="max-w-[85%] text-sm leading-relaxed text-white/70 sm:text-base">
+              {product.description}
+            </p>
+            <p className="text-2xl font-bold text-primary sm:text-3xl">
+              ${product.price.toFixed(2)}
+            </p>
+          </div>
           <Button
             variant="ghost"
             size="icon"
-            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm text-foreground hover:bg-background"
+            className="absolute top-3 right-3 z-20 h-8 w-8 rounded-full bg-background/80 text-foreground backdrop-blur-sm hover:bg-background"
             onClick={handleClose}
             aria-label="Close product details"
           >
@@ -113,23 +127,8 @@ export function ProductModal({ product, allModifierGroups, open, onClose }: Prod
           </Button>
         </div>
 
-        <ScrollArea className="max-h-[50vh]">
-          <div className="p-5 flex flex-col gap-5">
-            <div>
-              <DialogTitle
-                className="text-xl font-bold text-card-foreground"
-                style={{ fontFamily: "var(--font-heading)" }}
-              >
-                {product.name}
-              </DialogTitle>
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                {product.description}
-              </p>
-              <p className="text-2xl font-bold text-primary mt-2">
-                ${product.price.toFixed(2)}
-              </p>
-            </div>
-
+        <div className="product-modal-scroll min-h-0 overflow-y-auto">
+          <div className="flex flex-col gap-5 p-5 pr-6">
             {productModifierGroups.map((group) => (
               <div key={group.id}>
                 <div className="flex items-center justify-between mb-3">
@@ -230,7 +229,7 @@ export function ProductModal({ product, allModifierGroups, open, onClose }: Prod
               </div>
             ))}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="p-5 border-t border-border flex items-center gap-4">
           <div className="flex items-center gap-3 bg-secondary rounded-xl px-1">
