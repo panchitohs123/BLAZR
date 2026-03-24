@@ -114,7 +114,7 @@ export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
         order.deliveryMethod === "delivery" &&
         driverId &&
         hasCoordinates &&
-        (order.status === "ready" || order.status === "delivering")
+        order.status === "ready"
 
     const destination = hasCoordinates
         ? { lat: order.addressLat!, lng: order.addressLng!, address: order.address }
