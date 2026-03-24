@@ -24,7 +24,7 @@ export default function DriverDashboardPage() {
     const [storageError, setStorageError] = useState(false)
     const router = useRouter()
 
-    const { isTracking, lastLocation, error } = useDriverLocation({
+    const { isTracking, lastLocation, error, locationStatus } = useDriverLocation({
         driverId,
         enabled: true,
         interval: 10000,
@@ -183,10 +183,22 @@ export default function DriverDashboardPage() {
                                 <p className="text-xs text-muted-foreground">
                                     {activeOrders.length} entregas pendientes
                                 </p>
-                                {isTracking && (
+                                {locationStatus === "active" && (
                                     <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
                                         <Locate className="h-3 w-3 mr-1" />
-                                        GPS
+                                        GPS activo
+                                    </Badge>
+                                )}
+                                {locationStatus === "requesting" && (
+                                    <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-600 border-yellow-200">
+                                        <Locate className="h-3 w-3 mr-1" />
+                                        Obteniendo GPS...
+                                    </Badge>
+                                )}
+                                {locationStatus === "error" && (
+                                    <Badge variant="outline" className="text-xs bg-red-50 text-red-600 border-red-200">
+                                        <AlertCircle className="h-3 w-3 mr-1" />
+                                        GPS sin acceso
                                     </Badge>
                                 )}
                             </div>

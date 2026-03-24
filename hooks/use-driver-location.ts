@@ -23,6 +23,7 @@ export function useDriverLocation({
         timestamp: Date
     } | null>(null)
     const [error, setError] = useState<GeolocationPositionError | null>(null)
+    const [locationStatus, setLocationStatus] = useState<"idle" | "requesting" | "active" | "error">("idle")
     
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
     const watchIdRef = useRef<number | null>(null)
@@ -35,17 +36,22 @@ export function useDriverLocation({
 
             try {
                 const result = await updateDriverLocation(driverId, latitude, longitude)
-                
-                if (!result.error) {
+
+                if (result.error) {
+                    console.error("Error updating location in DB:", result.error)
+                    setLocationStatus("error")
+                } else {
                     setLastLocation({
                         lat: latitude,
                         lng: longitude,
                         timestamp: new Date(),
                     })
                     setError(null)
+                    setLocationStatus("active")
                 }
             } catch (err) {
                 console.error("Error sending location:", err)
+                setLocationStatus("error")
             }
         },
         [driverId]
@@ -54,6 +60,7 @@ export function useDriverLocation({
     const handleError = useCallback(
         (err: GeolocationPositionError) => {
             setError(err)
+            setLocationStatus("error")
             onError?.(err)
             
             switch (err.code) {
@@ -78,6 +85,7 @@ export function useDriverLocation({
         }
 
         setIsTracking(true)
+        setLocationStatus("requesting")
 
         // Get initial position
         navigator.geolocation.getCurrentPosition(sendLocation, handleError, {
@@ -137,6 +145,7 @@ export function useDriverLocation({
         isTracking,
         lastLocation,
         error,
+        locationStatus,
         startTracking,
         stopTracking,
     }
