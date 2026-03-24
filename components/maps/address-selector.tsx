@@ -28,20 +28,60 @@ function isPointInPolygon(
     point: { lat: number; lng: number },
     polygon: { lat: number; lng: number }[]
 ): boolean {
+    if (!polygon || polygon.length < 3) return false
     let inside = false
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
         const xi = polygon[i].lng
         const yi = polygon[i].lat
         const xj = polygon[j].lng
         const yj = polygon[j].lat
-
         const intersect =
             yi > point.lat !== yj > point.lat &&
             point.lng < ((xj - xi) * (point.lat - yi)) / (yj - yi) + xi
-
         if (intersect) inside = !inside
     }
     return inside
+}
+
+// Marcador tradicional que funciona sin Map ID
+function TraditionalMarker({
+    map,
+    position,
+    color = "#ef4444",
+    title,
+}: {
+    map: google.maps.Map
+    position: google.maps.LatLngLiteral
+    color?: string
+    title?: string
+}) {
+    const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
+
+    useEffect(() => {
+        const pinElement = document.createElement("div")
+        pinElement.innerHTML = `
+            <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="${color}"/>
+                <circle cx="16" cy="16" r="8" fill="white"/>
+            </svg>
+        `
+        pinElement.style.cursor = "pointer"
+
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position,
+            title,
+            content: pinElement,
+        })
+
+        markerRef.current = marker
+
+        return () => {
+            marker.map = null
+        }
+    }, [map, position, color, title])
+
+    return null
 }
 
 export function AddressSelector({
@@ -58,8 +98,8 @@ export function AddressSelector({
     const [searchQuery, setSearchQuery] = useState("")
     const [isSearching, setIsSearching] = useState(false)
     const [selectedZone, setSelectedZone] = useState<string | null>(null)
-    const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
-    const searchInputRef = useRef<HTMLInputElement>(null)
+    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null)
+    const hasMapId = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID
 
     // Geocodificación inversa para obtener dirección
     const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
@@ -193,6 +233,10 @@ export function AddressSelector({
         }
     }, [map, checkZone, onChange, reverseGeocode, zones])
 
+    const handleMapLoad = useCallback((map: google.maps.Map) => {
+        setMapInstance(map)
+    }, [])
+
     return (
         <div className="space-y-3">
             {/* Search bar */}
@@ -200,7 +244,6 @@ export function AddressSelector({
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                        ref={searchInputRef}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder={placeholder}
@@ -236,8 +279,9 @@ export function AddressSelector({
                         defaultZoom={13}
                         gestureHandling="greedy"
                         disableDefaultUI={false}
-                        mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID}
+                        mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || undefined}
                         onClick={handleMapClick}
+                        onLoad={handleMapLoad}
                     >
                         {/* Show zones */}
                         {zones.map((zone) => (
@@ -251,8 +295,8 @@ export function AddressSelector({
                             />
                         ))}
 
-                        {/* Marker */}
-                        {marker && (
+                        {/* Marker with Map ID */}
+                        {marker && hasMapId && (
                             <AdvancedMarker position={marker} title="Tu ubicación">
                                 <Pin
                                     background="#ef4444"
@@ -261,6 +305,16 @@ export function AddressSelector({
                                     scale={1}
                                 />
                             </AdvancedMarker>
+                        )}
+
+                        {/* Marker without Map ID */}
+                        {marker && !hasMapId && mapInstance && (
+                            <TraditionalMarker
+                                map={mapInstance}
+                                position={marker}
+                                color="#ef4444"
+                                title="Tu ubicación"
+                            />
                         )}
                     </Map>
                 </div>

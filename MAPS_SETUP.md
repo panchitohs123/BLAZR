@@ -41,18 +41,22 @@ Este documento describe la implementación del sistema de geolocalización, mapa
 1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
 2. Crea un nuevo proyecto o selecciona uno existente
 3. Habilita las siguientes APIs:
-   - **Maps JavaScript API **
-   - **Places API gratis hasta 5k de recurssos luego cobra 17 dolares cada 1k de recuross**
-   - **Geocoding API costo hasta 10k recursos x mes gratis luego de ahi 5usd cada 1 k de recursos**
+   - ✅ **Maps JavaScript API** (obligatoria)
+   - ✅ **Places API** (para búsqueda de direcciones)
+   - ✅ **Geocoding API** (para convertir direcciones a coordenadas)
 
 ### 2. Obtener API Key
 
 1. Ve a "Credentials" en el menú lateral
 2. Clic en "Create Credentials" → "API Key"
 3. Copia la API key generada
-4. (Opcional) Restringe la key por:
-   - Aplicaciones HTTP (referrers)
-   - APIs específicas
+4. En **Application restrictions** selecciona **HTTP referrers (websites)**
+5. Agrega tu dominio:
+   ```
+   https://tu-dominio.com/*
+   https://*.vercel.app/*     (para previews)
+   http://localhost:3000/*    (para desarrollo)
+   ```
 
 ### 3. Configurar Variables de Entorno
 
@@ -60,41 +64,53 @@ Agrega a tu archivo `.env`:
 
 ```env
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=tu_api_key_aqui
-NEXT_PUBLIC_GOOGLE_MAPS_ID=optional_map_id
 ```
 
-### 4. Configurar Map ID (Opcional)
+### 4. Configurar Map ID (Opcional pero Recomendado)
 
-Para personalizar el estilo del mapa:
+Para usar **Advanced Markers** (mejor rendimiento y estilos):
 
-1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
-2. Navega a "Map Management"
-3. Crea un nuevo Map ID
-4. Selecciona el estilo deseado
-5. Agrega el ID a tu `.env`
+1. Ve a [Google Cloud Console](https://console.cloud.google.com/) → **Map Management**
+2. Clic en **Create Map ID**
+3. Selecciona **JavaScript** como plataforma
+4. Copia el Map ID generado
+5. Agrega a tu `.env`:
+
+```env
+NEXT_PUBLIC_GOOGLE_MAPS_ID=tu_map_id_aqui
+```
+
+> **Nota**: Si no configuras un Map ID, la aplicación funcionará perfectamente usando marcadores tradicionales. El Map ID solo habilita los "Advanced Markers" que tienen mejor rendimiento y animaciones más suaves.
+
+### 5. Habilitar Facturación
+
+Google Maps requiere tener una cuenta de facturación configurada (tienes **$200 créditos gratis mensuales**).
+
+---
 
 ## Migraciones de Base de Datos
 
 Ejecuta el script de migración en Supabase:
 
 ```bash
-# En el SQL Editor de Supabase, ejecutar:
 scripts/006_geolocation_and_maps.sql
 ```
 
 Esta migración agrega:
-- Coordenadas a las sucursales (`lat`, `lng`)
-- Coordenadas a los pedidos (`address_lat`, `address_lng`)
-- Tabla de histórico de ubicaciones de repartidores
-- Funciones para búsqueda de zonas por coordenadas
-- Triggers para actualización automática de ubicación
+- Coordenadas a las sucursales (`lat`, `lng`, `coverage_radius_km`)
+- Coordenadas a los pedidos (`address_lat`, `address_lng`, `address_formatted`)
+- Nueva tabla `driver_location_history` con tracking histórico
+- Funciones SQL para búsqueda de zonas por coordenadas
+- Realtime habilitado para tracking en vivo
+
+---
 
 ## Estructura de Componentes
 
 ```
 components/maps/
 ├── google-maps-provider.tsx    # Provider de Google Maps
-├── map-view.tsx                 # Vista de mapa básica
+├── map-view.tsx                 # Vista de mapa básica (soporta con/sin Map ID)
 ├── polygon.tsx                  # Componente de polígono
 ├── zone-editor.tsx              # Editor de zonas de delivery
 ├── address-selector.tsx         # Selector de dirección
@@ -102,6 +118,8 @@ components/maps/
 ├── drivers-overview-map.tsx     # Vista general de repartidores
 └── index.ts                     # Exports
 ```
+
+---
 
 ## Uso de Componentes
 
@@ -163,6 +181,8 @@ import { DriversOverviewMap, GoogleMapsProvider } from "@/components/maps"
 </GoogleMapsProvider>
 ```
 
+---
+
 ## Hook de Ubicación del Driver
 
 ```tsx
@@ -175,6 +195,8 @@ const { isTracking, lastLocation, error } = useDriverLocation({
   onError: (err) => console.error(err),
 })
 ```
+
+---
 
 ## APIs Adicionales
 
@@ -193,38 +215,81 @@ await updateDriverLocation(driverId, lat, lng)
 SELECT * FROM find_zone_by_coordinates(-34.6037, -58.3816, branch_id)
 ```
 
+---
+
 ## Consideraciones de Rendimiento
 
-1. **Rate Limits**: Google Maps API tiene límites de uso gratuito:
-   - 28,500 cargas de mapa por mes
-   - Límites adicionales para Places y Geocoding
+### 1. **Rate Limits de Google Maps**
 
-2. **Optimización de Costos**:
-   - Usa `NEXT_PUBLIC_GOOGLE_MAPS_ID` para habilitar caché
-   - Implementa debounce en búsquedas
-   - Limita actualizaciones de ubicación a 10s
+Google Maps API tiene límites de uso gratuito:
+- **28,500 cargas de mapa por mes** (gratis)
+- Límites adicionales para Places y Geocoding
 
-3. **Seguridad**:
-   - Restringe la API key por dominio
-   - Nunca expongas la API key en el servidor
-   - Usa variables de entorno
+### 2. **Optimización de Costos**
+
+- **Con Map ID**: Mejor rendimiento, caché de marcadores, menos llamadas a API
+- **Sin Map ID**: Funciona igual, solo que con marcadores tradicionales
+
+### 3. **Seguridad**
+
+- ✅ Restringe la API key por dominio en Google Cloud Console
+- ✅ Nunca expongas la API key en el servidor
+- ✅ Usa variables de entorno
+
+---
 
 ## Solución de Problemas
 
-### El mapa no carga
-- Verifica que la API key esté configurada correctamente
-- Asegúrate de que las APIs necesarias estén habilitadas
-- Revisa la consola del navegador por errores
+### ❌ "The map is initialized without a valid Map ID"
 
-### Ubicación no disponible
+**Solución**: Este es solo un warning. El mapa funciona igual usando marcadores tradicionales. Para eliminarlo:
+1. Crea un Map ID en Google Cloud Console
+2. Agrega `NEXT_PUBLIC_GOOGLE_MAPS_ID=tu_id` a tu `.env`
+
+### ❌ "Google Maps JavaScript API error: RefererNotAllowedMapError"
+
+**Solución**: Tu dominio no está autorizado. En Google Cloud Console:
+1. Ve a Credentials → Tu API Key
+2. En "HTTP referrers" agrega: `https://tu-dominio.com/*`
+
+### ❌ "Failed to load resource: net::ERR_BLOCKED_BY_CLIENT"
+
+**Solución**: Tienes un ad blocker (uBlock, AdBlock, etc.) activado. Desactívalo para tu sitio o ignora el error (no afecta el funcionamiento).
+
+### ❌ El mapa no carga
+
+1. Verifica que la API key esté configurada en Vercel (Environment Variables)
+2. Asegúrate de que las APIs necesarias estén habilitadas
+3. Revisa que la facturación esté activada en Google Cloud
+
+### ❌ Ubicación no disponible
+
 - El usuario debe permitir acceso a la ubicación
 - En desarrollo local, usa HTTPS o localhost
 - Algunos navegadores bloquean geolocalización en HTTP
 
-### Zonas no detectadas
+### ❌ Zonas no detectadas
+
 - Verifica que las coordenadas del polígono sean correctas
 - El algoritmo point-in-polygon requiere al menos 3 puntos
 - Considera usar PostGIS para cálculos más precisos
+
+---
+
+## Map ID vs Sin Map ID
+
+| Característica | Con Map ID | Sin Map ID |
+|---------------|------------|------------|
+| Marcadores | Advanced Markers | Tradicionales |
+| Rendimiento | Mejor | Bueno |
+| Animaciones | Más suaves | Estándar |
+| Estilos personalizados | ✅ Sí | ❌ No |
+| Costo | Menor | Estándar |
+| Funcionalidad | Completa | Completa |
+
+> **Recomendación**: Empieza sin Map ID para probar. Cuando todo funcione, crea un Map ID para optimizar.
+
+---
 
 ## Mejoras Futuras
 

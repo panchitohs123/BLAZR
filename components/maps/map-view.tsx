@@ -1,14 +1,7 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import {
-    Map,
-    useMap,
-    AdvancedMarker,
-    Pin,
-    MapControl,
-    ControlPosition,
-} from "@vis.gl/react-google-maps"
+import { useState, useCallback, useRef, useEffect } from "react"
+import { Map, useMap, AdvancedMarker, Pin, MapControl, ControlPosition } from "@vis.gl/react-google-maps"
 import { Polygon } from "./polygon"
 
 export interface MapMarker {
@@ -85,6 +78,55 @@ function CurrentLocationButton() {
     )
 }
 
+// Marcador tradicional que funciona sin Map ID
+function TraditionalMarker({
+    map,
+    position,
+    title,
+    color = "#3b82f6",
+    onClick,
+}: {
+    map: google.maps.Map
+    position: google.maps.LatLngLiteral
+    title?: string
+    color?: string
+    onClick?: () => void
+}) {
+    const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
+
+    useEffect(() => {
+        // Crear el elemento del pin con el color
+        const pinElement = document.createElement("div")
+        pinElement.innerHTML = `
+            <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="${color}"/>
+                <circle cx="16" cy="16" r="8" fill="white"/>
+            </svg>
+        `
+        pinElement.style.cursor = "pointer"
+
+        // Crear el marcador avanzado con elemento personalizado
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position,
+            title,
+            content: pinElement,
+        })
+
+        if (onClick) {
+            marker.addListener("click", onClick)
+        }
+
+        markerRef.current = marker
+
+        return () => {
+            marker.map = null
+        }
+    }, [map, position, title, color, onClick])
+
+    return null
+}
+
 export function MapView({
     center = defaultCenter,
     zoom = 13,
@@ -97,6 +139,8 @@ export function MapView({
     showCurrentLocation = true,
 }: MapViewProps) {
     const [selectedMarker, setSelectedMarker] = useState<string | null>(null)
+    const [map, setMap] = useState<google.maps.Map | null>(null)
+    const hasMapId = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID
 
     const handleMapClick = useCallback(
         (e: google.maps.MapMouseEvent) => {
@@ -107,32 +151,25 @@ export function MapView({
         [onMapClick]
     )
 
+    const handleMapLoad = useCallback(
+        (mapInstance: google.maps.Map) => {
+            setMap(mapInstance)
+            onMapLoad?.(mapInstance)
+        },
+        [onMapLoad]
+    )
+
     const getPinConfig = (marker: MapMarker) => {
-        switch (marker.icon) {
-            case "branch":
-                return {
-                    background: marker.color || "#3b82f6",
-                    borderColor: "#1d4ed8",
-                    glyphColor: "#ffffff",
-                }
-            case "driver":
-                return {
-                    background: marker.color || "#22c55e",
-                    borderColor: "#15803d",
-                    glyphColor: "#ffffff",
-                }
-            case "customer":
-                return {
-                    background: marker.color || "#ef4444",
-                    borderColor: "#b91c1c",
-                    glyphColor: "#ffffff",
-                }
-            default:
-                return {
-                    background: marker.color || "#3b82f6",
-                    borderColor: "#1d4ed8",
-                    glyphColor: "#ffffff",
-                }
+        const colors = {
+            branch: marker.color || "#3b82f6",
+            driver: marker.color || "#22c55e",
+            customer: marker.color || "#ef4444",
+            default: marker.color || "#3b82f6",
+        }
+        return {
+            background: colors[marker.icon || "default"],
+            borderColor: colors[marker.icon || "default"],
+            glyphColor: "#ffffff",
         }
     }
 
@@ -143,9 +180,9 @@ export function MapView({
                 defaultZoom={zoom}
                 gestureHandling="greedy"
                 disableDefaultUI={false}
-                mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID}
+                mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || undefined}
                 onClick={handleMapClick}
-                onLoad={onMapLoad}
+                onLoad={handleMapLoad}
             >
                 {/* Render zones */}
                 {zones.map((zone) => (
@@ -161,20 +198,45 @@ export function MapView({
                     />
                 ))}
 
-                {/* Render markers */}
-                {markers.map((marker) => (
-                    <AdvancedMarker
-                        key={marker.id}
-                        position={{ lat: marker.lat, lng: marker.lng }}
-                        title={marker.title}
-                        onClick={() => {
-                            setSelectedMarker(marker.id)
-                            marker.onClick?.()
-                        }}
-                    >
-                        <Pin {...getPinConfig(marker)} />
-                    </AdvancedMarker>
-                ))}
+                {/* Render markers - use AdvancedMarker with Pin if Map ID exists, otherwise use traditional markers */}
+                {hasMapId ? (
+                    // Usar AdvancedMarker con Pin (requiere Map ID)
+                    markers.map((marker) => (
+                        <AdvancedMarker
+                            key={marker.id}
+                            position={{ lat: marker.lat, lng: marker.lng }}
+                            title={marker.title}
+                            onClick={() => {
+                                setSelectedMarker(marker.id)
+                                marker.onClick?.()
+                            }}
+                        >
+                            <Pin {...getPinConfig(marker)} />
+                        </AdvancedMarker>
+                    ))
+                ) : (
+                    // Usar marcadores tradicionales (funciona sin Map ID)
+                    map &&
+                    markers.map((marker) => (
+                        <TraditionalMarker
+                            key={marker.id}
+                            map={map}
+                            position={{ lat: marker.lat, lng: marker.lng }}
+                            title={marker.title}
+                            color={
+                                marker.icon === "driver"
+                                    ? marker.color || "#22c55e"
+                                    : marker.icon === "customer"
+                                    ? marker.color || "#ef4444"
+                                    : marker.color || "#3b82f6"
+                            }
+                            onClick={() => {
+                                setSelectedMarker(marker.id)
+                                marker.onClick?.()
+                            }}
+                        />
+                    ))
+                )}
 
                 {/* Current location button */}
                 {showCurrentLocation && (

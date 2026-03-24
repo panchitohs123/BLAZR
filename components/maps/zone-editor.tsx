@@ -19,6 +19,49 @@ interface ZoneEditorProps {
 const defaultCenter = { lat: -34.6037, lng: -58.3816 }
 const COLORS = ["#3b82f6", "#ef4444", "#22c55e", "#f59e0b", "#8b5cf6", "#ec4899"]
 
+// Marcador tradicional que funciona sin Map ID
+function TraditionalMarker({
+    map,
+    position,
+    color = "#3b82f6",
+    scale = 1,
+    title,
+}: {
+    map: google.maps.Map
+    position: google.maps.LatLngLiteral
+    color?: string
+    scale?: number
+    title?: string
+}) {
+    const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
+
+    useEffect(() => {
+        const pinElement = document.createElement("div")
+        pinElement.innerHTML = `
+            <svg width="${32 * scale}" height="${40 * scale}" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="${color}"/>
+                <circle cx="16" cy="16" r="8" fill="white"/>
+            </svg>
+        `
+        pinElement.style.cursor = "pointer"
+
+        const marker = new google.maps.marker.AdvancedMarkerElement({
+            map,
+            position,
+            title,
+            content: pinElement,
+        })
+
+        markerRef.current = marker
+
+        return () => {
+            marker.map = null
+        }
+    }, [map, position, color, scale, title])
+
+    return null
+}
+
 export function ZoneEditor({
     initialCoordinates = [],
     center = defaultCenter,
@@ -31,7 +74,8 @@ export function ZoneEditor({
     const map = useMap()
     const [coordinates, setCoordinates] = useState<{ lat: number; lng: number }[]>(initialCoordinates)
     const [isDrawing, setIsDrawing] = useState(false)
-    const mapRef = useRef<google.maps.Map | null>(null)
+    const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null)
+    const hasMapId = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID
 
     // Sync with initial coordinates
     useEffect(() => {
@@ -78,7 +122,7 @@ export function ZoneEditor({
     }, [coordinates])
 
     const handleMapLoad = useCallback((map: google.maps.Map) => {
-        mapRef.current = map
+        setMapInstance(map)
     }, [])
 
     return (
@@ -90,7 +134,7 @@ export function ZoneEditor({
                         defaultZoom={14}
                         gestureHandling="greedy"
                         disableDefaultUI={false}
-                        mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID}
+                        mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || undefined}
                         onClick={handleMapClick}
                         onLoad={handleMapLoad}
                     >
@@ -118,6 +162,7 @@ export function ZoneEditor({
 
                         {/* Markers for each point */}
                         {!readOnly &&
+                            hasMapId &&
                             coordinates.map((coord, index) => (
                                 <AdvancedMarker
                                     key={index}
@@ -133,8 +178,23 @@ export function ZoneEditor({
                                 </AdvancedMarker>
                             ))}
 
+                        {/* Traditional markers when no Map ID */}
+                        {!readOnly &&
+                            !hasMapId &&
+                            mapInstance &&
+                            coordinates.map((coord, index) => (
+                                <TraditionalMarker
+                                    key={index}
+                                    map={mapInstance}
+                                    position={coord}
+                                    color={zoneColor}
+                                    scale={0.8}
+                                    title={`Punto ${index + 1}`}
+                                />
+                            ))}
+
                         {/* Branch marker */}
-                        {branchMarker && (
+                        {branchMarker && hasMapId && (
                             <AdvancedMarker
                                 position={{ lat: branchMarker.lat, lng: branchMarker.lng }}
                                 title={branchMarker.title || "Sucursal"}
@@ -146,6 +206,17 @@ export function ZoneEditor({
                                     scale={1.2}
                                 />
                             </AdvancedMarker>
+                        )}
+
+                        {/* Branch marker traditional */}
+                        {branchMarker && !hasMapId && mapInstance && (
+                            <TraditionalMarker
+                                map={mapInstance}
+                                position={{ lat: branchMarker.lat, lng: branchMarker.lng }}
+                                color="#1f2937"
+                                scale={1.2}
+                                title={branchMarker.title || "Sucursal"}
+                            />
                         )}
                     </Map>
                 </div>
