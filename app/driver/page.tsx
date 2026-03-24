@@ -46,11 +46,14 @@ export default function DriverLoginPage() {
 
         try {
             const supabase = createClient()
-            
+
+            // Normalizar: remover todo excepto dígitos
+            const normalizedPhone = phone.replace(/\D/g, "")
+
             const { data: driver, error } = await supabase
                 .from("drivers")
                 .select("*")
-                .eq("phone", phone.trim())
+                .eq("phone", normalizedPhone)
                 .eq("is_active", true)
                 .single()
 
