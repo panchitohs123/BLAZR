@@ -19,7 +19,7 @@ export function Header({ onCartOpen }: HeaderProps) {
             className="text-xl font-bold tracking-tight"
             style={{ fontFamily: "var(--font-heading)" }}
           >
-            <span className="text-primary">BLAZR</span>
+            <span className="text-primary">BLZR</span>
           </h1>
           <div className="hidden sm:flex items-center gap-1.5 text-muted-foreground text-sm">
             <MapPin className="h-3.5 w-3.5" />
