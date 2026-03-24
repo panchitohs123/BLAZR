@@ -802,14 +802,16 @@ export async function deleteDriver(id: string) {
 export async function updateDriverLocation(driverId: string, lat: number, lng: number) {
     const supabase = createAdminClient()
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from("drivers")
         .update({
             current_location: { lat, lng, updated_at: new Date().toISOString() },
         })
         .eq("id", driverId)
+        .select("id")
 
     if (error) return { error: error.message }
+    if (!data || data.length === 0) return { error: "Driver not found" }
     return { success: true }
 }
 

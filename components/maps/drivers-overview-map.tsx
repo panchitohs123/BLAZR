@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps"
+import { useEffect, useState, useCallback, useRef } from "react"
+import { Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps"
 import { createClient } from "@/lib/supabase/client"
 import type { Driver } from "@/lib/types"
 import { Card, CardContent } from "@/components/ui/card"
@@ -145,7 +145,7 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
     const [drivers, setDrivers] = useState<DriverWithLocation[]>([])
     const [selectedDriver, setSelectedDriver] = useState<DriverWithLocation | null>(null)
     const [loading, setLoading] = useState(true)
-    const [map, setMap] = useState<google.maps.Map | null>(null)
+    const map = useMap()
     const hasMapId = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID
 
     useEffect(() => {
@@ -267,10 +267,6 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
               }
             : defaultCenter
 
-    const handleMapLoad = useCallback((mapInstance: google.maps.Map) => {
-        setMap(mapInstance)
-    }, [])
-
     if (loading) {
         return (
             <div
@@ -327,7 +323,6 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
                         gestureHandling="greedy"
                         disableDefaultUI={false}
                         mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || undefined}
-                        onLoad={handleMapLoad}
                     >
                         {/* Markers with Map ID */}
                         {hasMapId &&
