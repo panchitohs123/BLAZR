@@ -18,8 +18,16 @@ export async function createOrder(formData: {
     subtotal: number
     deliveryFee: number
     total: number
+    couponCode?: string
+    couponDiscount?: number
+    deliveryZoneId?: string
+    orderType?: "online" | "pos" | "phone"
+    createdBy?: string
 }) {
     const supabase = await createClient()
+
+    // Get current user if authenticated (for POS orders)
+    const { data: { user } } = await supabase.auth.getUser()
 
     const { data: order, error: orderError } = await supabase
         .from("orders")
@@ -35,6 +43,11 @@ export async function createOrder(formData: {
             delivery_fee: formData.deliveryFee,
             total: formData.total,
             status: "new",
+            coupon_code: formData.couponCode || null,
+            coupon_discount: formData.couponDiscount || 0,
+            delivery_zone_id: formData.deliveryZoneId || null,
+            order_type: formData.orderType || "online",
+            created_by: formData.createdBy || user?.id || null,
         })
         .select("id, public_tracking_token, order_number")
         .single()
@@ -64,6 +77,7 @@ export async function createOrder(formData: {
 
     revalidatePath("/admin/orders")
     revalidatePath("/admin")
+    revalidatePath("/admin/kitchen")
 
     return {
         orderId: order.id,
@@ -74,13 +88,21 @@ export async function createOrder(formData: {
 
 export async function updateOrderStatus(
     orderId: string,
-    newStatus: string
+    newStatus: string,
+    driverId?: string
 ) {
     const supabase = await createClient()
 
+    const updateData: Record<string, any> = { status: newStatus }
+    
+    if (driverId) {
+        updateData.driver_id = driverId
+        updateData.driver_assigned_at = new Date().toISOString()
+    }
+
     const { error } = await supabase
         .from("orders")
-        .update({ status: newStatus })
+        .update(updateData)
         .eq("id", orderId)
 
     if (error) {
@@ -89,6 +111,27 @@ export async function updateOrderStatus(
 
     revalidatePath("/admin/orders")
     revalidatePath("/admin")
+    revalidatePath("/admin/kitchen")
+    revalidatePath("/driver/dashboard")
+    return { success: true }
+}
+
+export async function assignDriver(orderId: string, driverId: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from("orders")
+        .update({
+            driver_id: driverId,
+            driver_assigned_at: new Date().toISOString(),
+            status: "ready"
+        })
+        .eq("id", orderId)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/orders")
+    revalidatePath("/driver/dashboard")
     return { success: true }
 }
 
@@ -437,5 +480,381 @@ export async function toggleBranchOpen(id: string) {
     if (error) return { error: error.message }
 
     revalidatePath("/admin/branches")
+    return { success: true }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NUEVAS FEATURES DE NEGOCIO
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Coupons ───────────────────────────────────────────────────
+
+export async function validateCoupon(code: string, cartTotal: number) {
+    const supabase = await createClient()
+
+    const { data: coupon, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .eq("code", code.toUpperCase())
+        .eq("is_active", true)
+        .single()
+
+    if (error || !coupon) {
+        return { error: "Código de cupón inválido" }
+    }
+
+    // Check dates
+    if (new Date(coupon.valid_from) > new Date()) {
+        return { error: "Este cupón aún no está disponible" }
+    }
+    if (coupon.valid_until && new Date(coupon.valid_until) < new Date()) {
+        return { error: "Este cupón ha expirado" }
+    }
+
+    // Check minimum order
+    if (cartTotal < (coupon.min_order_amount || 0)) {
+        return { error: `Mínimo de compra: $${coupon.min_order_amount}` }
+    }
+
+    // Check usage limit
+    if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
+        return { error: "Este cupón ha alcanzado su límite de uso" }
+    }
+
+    // Calculate discount
+    let discount = 0
+    if (coupon.discount_type === "percentage") {
+        discount = cartTotal * (coupon.discount_value / 100)
+        if (coupon.max_discount_amount && discount > coupon.max_discount_amount) {
+            discount = coupon.max_discount_amount
+        }
+    } else {
+        discount = coupon.discount_value
+    }
+
+    return {
+        valid: true,
+        discount,
+        discountType: coupon.discount_type,
+        discountValue: coupon.discount_value,
+        code: coupon.code,
+    }
+}
+
+export async function createCoupon(data: {
+    code: string
+    description?: string
+    discountType: "percentage" | "fixed_amount"
+    discountValue: number
+    minOrderAmount?: number
+    maxDiscountAmount?: number
+    usageLimit?: number
+    perUserLimit?: number
+    validFrom: string
+    validUntil?: string
+}) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("coupons").insert({
+        code: data.code.toUpperCase(),
+        description: data.description,
+        discount_type: data.discountType,
+        discount_value: data.discountValue,
+        min_order_amount: data.minOrderAmount || 0,
+        max_discount_amount: data.maxDiscountAmount,
+        usage_limit: data.usageLimit,
+        per_user_limit: data.perUserLimit || 1,
+        valid_from: data.validFrom,
+        valid_until: data.validUntil,
+    })
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/coupons")
+    return { success: true }
+}
+
+export async function updateCoupon(
+    id: string,
+    data: {
+        description?: string
+        discountType?: "percentage" | "fixed_amount"
+        discountValue?: number
+        minOrderAmount?: number
+        maxDiscountAmount?: number
+        usageLimit?: number
+        perUserLimit?: number
+        validFrom?: string
+        validUntil?: string
+        isActive?: boolean
+    }
+) {
+    const supabase = await createClient()
+
+    const updateData: Record<string, any> = {}
+    if (data.description !== undefined) updateData.description = data.description
+    if (data.discountType !== undefined) updateData.discount_type = data.discountType
+    if (data.discountValue !== undefined) updateData.discount_value = data.discountValue
+    if (data.minOrderAmount !== undefined) updateData.min_order_amount = data.minOrderAmount
+    if (data.maxDiscountAmount !== undefined) updateData.max_discount_amount = data.maxDiscountAmount
+    if (data.usageLimit !== undefined) updateData.usage_limit = data.usageLimit
+    if (data.perUserLimit !== undefined) updateData.per_user_limit = data.perUserLimit
+    if (data.validFrom !== undefined) updateData.valid_from = data.validFrom
+    if (data.validUntil !== undefined) updateData.valid_until = data.validUntil
+    if (data.isActive !== undefined) updateData.is_active = data.isActive
+
+    const { error } = await supabase
+        .from("coupons")
+        .update(updateData)
+        .eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/coupons")
+    return { success: true }
+}
+
+export async function deleteCoupon(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("coupons").delete().eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/coupons")
+    return { success: true }
+}
+
+// ─── Delivery Zones ────────────────────────────────────────────
+
+export async function createDeliveryZone(data: {
+    branchId: string
+    name: string
+    color?: string
+    coordinates: { lat: number; lng: number }[]
+    deliveryFee: number
+    minOrderAmount?: number
+    estimatedTimeMin?: number
+}) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("delivery_zones").insert({
+        sucursal_id: data.branchId,
+        name: data.name,
+        color: data.color || "#3b82f6",
+        coordinates: data.coordinates,
+        delivery_fee: data.deliveryFee,
+        min_order_amount: data.minOrderAmount || 0,
+        estimated_time_min: data.estimatedTimeMin,
+    })
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/delivery-zones")
+    return { success: true }
+}
+
+export async function updateDeliveryZone(
+    id: string,
+    data: {
+        name?: string
+        color?: string
+        coordinates?: { lat: number; lng: number }[]
+        deliveryFee?: number
+        minOrderAmount?: number
+        estimatedTimeMin?: number
+        isActive?: boolean
+    }
+) {
+    const supabase = await createClient()
+
+    const updateData: Record<string, any> = {}
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.color !== undefined) updateData.color = data.color
+    if (data.coordinates !== undefined) updateData.coordinates = data.coordinates
+    if (data.deliveryFee !== undefined) updateData.delivery_fee = data.deliveryFee
+    if (data.minOrderAmount !== undefined) updateData.min_order_amount = data.minOrderAmount
+    if (data.estimatedTimeMin !== undefined) updateData.estimated_time_min = data.estimatedTimeMin
+    if (data.isActive !== undefined) updateData.is_active = data.isActive
+
+    const { error } = await supabase
+        .from("delivery_zones")
+        .update(updateData)
+        .eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/delivery-zones")
+    return { success: true }
+}
+
+export async function deleteDeliveryZone(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("delivery_zones").delete().eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/delivery-zones")
+    return { success: true }
+}
+
+// ─── Drivers ───────────────────────────────────────────────────
+
+export async function createDriver(data: {
+    name: string
+    phone: string
+    email?: string
+    vehicleType?: "motorcycle" | "bicycle" | "car"
+    vehiclePlate?: string
+}) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("drivers").insert({
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        vehicle_type: data.vehicleType,
+        vehicle_plate: data.vehiclePlate,
+    })
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/drivers")
+    return { success: true }
+}
+
+export async function updateDriver(
+    id: string,
+    data: {
+        name?: string
+        phone?: string
+        email?: string
+        vehicleType?: "motorcycle" | "bicycle" | "car"
+        vehiclePlate?: string
+        isActive?: boolean
+        isAvailable?: boolean
+    }
+) {
+    const supabase = await createClient()
+
+    const updateData: Record<string, any> = {}
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.phone !== undefined) updateData.phone = data.phone
+    if (data.email !== undefined) updateData.email = data.email
+    if (data.vehicleType !== undefined) updateData.vehicle_type = data.vehicleType
+    if (data.vehiclePlate !== undefined) updateData.vehicle_plate = data.vehiclePlate
+    if (data.isActive !== undefined) updateData.is_active = data.isActive
+    if (data.isAvailable !== undefined) updateData.is_available = data.isAvailable
+
+    const { error } = await supabase
+        .from("drivers")
+        .update(updateData)
+        .eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/drivers")
+    return { success: true }
+}
+
+export async function deleteDriver(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("drivers").delete().eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/drivers")
+    return { success: true }
+}
+
+export async function updateDriverLocation(driverId: string, lat: number, lng: number) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from("drivers")
+        .update({
+            current_location: { lat, lng, updated_at: new Date().toISOString() },
+        })
+        .eq("id", driverId)
+
+    if (error) return { error: error.message }
+    return { success: true }
+}
+
+// ─── Upsell Rules ──────────────────────────────────────────────
+
+export async function createUpsellRule(data: {
+    name: string
+    triggerProductIds?: string[]
+    triggerCategoryIds?: string[]
+    suggestedProductIds: string[]
+    message?: string
+    discountPercentage?: number
+    priority?: number
+}) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("upsell_rules").insert({
+        name: data.name,
+        trigger_product_ids: data.triggerProductIds || [],
+        trigger_category_ids: data.triggerCategoryIds || [],
+        suggested_product_ids: data.suggestedProductIds,
+        message: data.message || "¿Te gustaría agregar esto?",
+        discount_percentage: data.discountPercentage || 0,
+        priority: data.priority || 0,
+    })
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/upsells")
+    return { success: true }
+}
+
+export async function updateUpsellRule(
+    id: string,
+    data: {
+        name?: string
+        triggerProductIds?: string[]
+        triggerCategoryIds?: string[]
+        suggestedProductIds?: string[]
+        message?: string
+        discountPercentage?: number
+        priority?: number
+        isActive?: boolean
+    }
+) {
+    const supabase = await createClient()
+
+    const updateData: Record<string, any> = {}
+    if (data.name !== undefined) updateData.name = data.name
+    if (data.triggerProductIds !== undefined) updateData.trigger_product_ids = data.triggerProductIds
+    if (data.triggerCategoryIds !== undefined) updateData.trigger_category_ids = data.triggerCategoryIds
+    if (data.suggestedProductIds !== undefined) updateData.suggested_product_ids = data.suggestedProductIds
+    if (data.message !== undefined) updateData.message = data.message
+    if (data.discountPercentage !== undefined) updateData.discount_percentage = data.discountPercentage
+    if (data.priority !== undefined) updateData.priority = data.priority
+    if (data.isActive !== undefined) updateData.is_active = data.isActive
+
+    const { error } = await supabase
+        .from("upsell_rules")
+        .update(updateData)
+        .eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/upsells")
+    return { success: true }
+}
+
+export async function deleteUpsellRule(id: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from("upsell_rules").delete().eq("id", id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/upsells")
     return { success: true }
 }

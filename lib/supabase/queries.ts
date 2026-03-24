@@ -1,5 +1,5 @@
 import { createClient } from "./server"
-import type { Category, Product, ModifierGroup, ModifierOption, Order, Branch, CartItem, CartItemModifier } from "../types"
+import type { Category, Product, ModifierGroup, ModifierOption, Order, Branch, CartItem, CartItemModifier, Coupon, DeliveryZone, Driver, UpsellRule } from "../types"
 
 // ─── Catalog Queries ───────────────────────────────────────────
 
@@ -228,6 +228,39 @@ export async function getOrders(): Promise<Order[]> {
     })
 }
 
+export async function getOrdersByStatus(statuses: string[]): Promise<Order[]> {
+    const supabase = await createClient()
+
+    const { data: orders, error: oErr } = await supabase
+        .from("orders")
+        .select("*")
+        .in("status", statuses)
+        .order("created_at", { ascending: true })
+
+    if (oErr) throw oErr
+    if (!orders || orders.length === 0) return []
+
+    const orderIds = orders.map((o) => o.id)
+    const { data: allItems, error: iErr } = await supabase
+        .from("order_items")
+        .select("*")
+        .in("order_id", orderIds)
+
+    if (iErr) throw iErr
+
+    const itemsByOrder = new Map<string, any[]>()
+    for (const item of allItems || []) {
+        const arr = itemsByOrder.get(item.order_id) || []
+        arr.push(item)
+        itemsByOrder.set(item.order_id, arr)
+    }
+
+    return orders.map((row) => {
+        const rawItems = itemsByOrder.get(row.id) || []
+        return mapOrder(row, mapOrderItems(rawItems))
+    })
+}
+
 export async function getOrderByToken(token: string): Promise<Order | null> {
     const supabase = await createClient()
 
@@ -248,3 +281,277 @@ export async function getOrderByToken(token: string): Promise<Order | null> {
     return mapOrder(row, mapOrderItems(itemsData || []))
 }
 
+export async function getOrderById(id: string): Promise<Order | null> {
+    const supabase = await createClient()
+
+    const { data: order, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", id)
+        .single()
+
+    if (error || !order) return null
+
+    const { data: items } = await supabase
+        .from("order_items")
+        .select("*")
+        .eq("order_id", id)
+
+    return mapOrder(order, mapOrderItems(items || []))
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NUEVAS QUERIES DE NEGOCIO
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Coupons ───────────────────────────────────────────────────
+
+export async function getCoupons(): Promise<Coupon[]> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("coupons")
+        .select("*")
+        .order("created_at", { ascending: false })
+
+    if (error) throw error
+    if (!data) return []
+
+    return data.map((row) => ({
+        id: row.id,
+        code: row.code,
+        description: row.description,
+        discountType: row.discount_type,
+        discountValue: parseFloat(row.discount_value),
+        minOrderAmount: parseFloat(row.min_order_amount || 0),
+        maxDiscountAmount: row.max_discount_amount ? parseFloat(row.max_discount_amount) : undefined,
+        usageLimit: row.usage_limit,
+        usageCount: row.usage_count || 0,
+        perUserLimit: row.per_user_limit || 1,
+        validFrom: row.valid_from,
+        validUntil: row.valid_until,
+        applicableTo: row.applicable_to || [],
+        excludedProducts: row.excluded_products || [],
+        isActive: row.is_active,
+    }))
+}
+
+// ─── Delivery Zones ────────────────────────────────────────────
+
+export async function getDeliveryZones(branchId?: string): Promise<DeliveryZone[]> {
+    const supabase = await createClient()
+
+    let query = supabase
+        .from("delivery_zones")
+        .select("*")
+        .eq("is_active", true)
+
+    if (branchId) {
+        query = query.eq("sucursal_id", branchId)
+    }
+
+    const { data, error } = await query.order("name", { ascending: true })
+
+    if (error) throw error
+    if (!data) return []
+
+    return data.map((row) => ({
+        id: row.id,
+        branchId: row.sucursal_id,
+        name: row.name,
+        color: row.color || "#3b82f6",
+        coordinates: row.coordinates || [],
+        deliveryFee: parseFloat(row.delivery_fee),
+        minOrderAmount: parseFloat(row.min_order_amount || 0),
+        estimatedTimeMin: row.estimated_time_min,
+        isActive: row.is_active,
+    }))
+}
+
+export async function getAllDeliveryZones(): Promise<DeliveryZone[]> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("delivery_zones")
+        .select("*")
+        .order("name", { ascending: true })
+
+    if (error) throw error
+    if (!data) return []
+
+    return data.map((row) => ({
+        id: row.id,
+        branchId: row.sucursal_id,
+        name: row.name,
+        color: row.color || "#3b82f6",
+        coordinates: row.coordinates || [],
+        deliveryFee: parseFloat(row.delivery_fee),
+        minOrderAmount: parseFloat(row.min_order_amount || 0),
+        estimatedTimeMin: row.estimated_time_min,
+        isActive: row.is_active,
+    }))
+}
+
+// ─── Drivers ───────────────────────────────────────────────────
+
+export async function getDrivers(): Promise<Driver[]> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("drivers")
+        .select("*")
+        .order("name", { ascending: true })
+
+    if (error) throw error
+    if (!data) return []
+
+    return data.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        phone: row.phone,
+        email: row.email,
+        vehicleType: row.vehicle_type,
+        vehiclePlate: row.vehicle_plate,
+        isActive: row.is_active,
+        isAvailable: row.is_available,
+        currentLocation: row.current_location,
+    }))
+}
+
+export async function getAvailableDrivers(): Promise<Driver[]> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("drivers")
+        .select("*")
+        .eq("is_active", true)
+        .eq("is_available", true)
+        .order("name", { ascending: true })
+
+    if (error) throw error
+    if (!data) return []
+
+    return data.map((row) => ({
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        phone: row.phone,
+        email: row.email,
+        vehicleType: row.vehicle_type,
+        vehiclePlate: row.vehicle_plate,
+        isActive: row.is_active,
+        isAvailable: row.is_available,
+        currentLocation: row.current_location,
+    }))
+}
+
+export async function getDriverByUserId(userId: string): Promise<Driver | null> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("drivers")
+        .select("*")
+        .eq("user_id", userId)
+        .single()
+
+    if (error || !data) return null
+
+    return {
+        id: data.id,
+        userId: data.user_id,
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        vehicleType: data.vehicle_type,
+        vehiclePlate: data.vehicle_plate,
+        isActive: data.is_active,
+        isAvailable: data.is_available,
+        currentLocation: data.current_location,
+    }
+}
+
+export async function getDriverDeliveries(driverId: string): Promise<Order[]> {
+    const supabase = await createClient()
+
+    const { data: orders, error: oErr } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("driver_id", driverId)
+        .in("status", ["ready", "delivered"])
+        .order("driver_assigned_at", { ascending: false })
+
+    if (oErr) throw oErr
+    if (!orders || orders.length === 0) return []
+
+    const orderIds = orders.map((o) => o.id)
+    const { data: allItems, error: iErr } = await supabase
+        .from("order_items")
+        .select("*")
+        .in("order_id", orderIds)
+
+    if (iErr) throw iErr
+
+    const itemsByOrder = new Map<string, any[]>()
+    for (const item of allItems || []) {
+        const arr = itemsByOrder.get(item.order_id) || []
+        arr.push(item)
+        itemsByOrder.set(item.order_id, arr)
+    }
+
+    return orders.map((row) => {
+        const rawItems = itemsByOrder.get(row.id) || []
+        return mapOrder(row, mapOrderItems(rawItems))
+    })
+}
+
+// ─── Upsells ───────────────────────────────────────────────────
+
+export async function getUpsellRules(): Promise<UpsellRule[]> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("upsell_rules")
+        .select("*")
+        .eq("is_active", true)
+        .order("priority", { ascending: false })
+
+    if (error) throw error
+    if (!data) return []
+
+    return data.map((row) => ({
+        id: row.id,
+        name: row.name,
+        triggerProductIds: row.trigger_product_ids || [],
+        triggerCategoryIds: row.trigger_category_ids || [],
+        suggestedProductIds: row.suggested_product_ids || [],
+        message: row.message,
+        discountPercentage: row.discount_percentage || 0,
+        priority: row.priority || 0,
+        isActive: row.is_active,
+    }))
+}
+
+export async function getAllUpsellRules(): Promise<UpsellRule[]> {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("upsell_rules")
+        .select("*")
+        .order("priority", { ascending: false })
+
+    if (error) throw error
+    if (!data) return []
+
+    return data.map((row) => ({
+        id: row.id,
+        name: row.name,
+        triggerProductIds: row.trigger_product_ids || [],
+        triggerCategoryIds: row.trigger_category_ids || [],
+        suggestedProductIds: row.suggested_product_ids || [],
+        message: row.message,
+        discountPercentage: row.discount_percentage || 0,
+        priority: row.priority || 0,
+        isActive: row.is_active,
+    }))
+}

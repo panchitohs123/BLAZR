@@ -12,6 +12,13 @@ import {
   Menu,
   LogOut,
   Tags,
+  ShoppingBag,
+  ChefHat,
+  Tag,
+  Bike,
+  MapPin,
+  Sparkles,
+  Map as MapIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -23,36 +30,69 @@ import { createClient } from "@/lib/supabase/client"
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
+  { href: "/admin/kitchen", label: "Kitchen", icon: ChefHat },
+  { href: "/admin/pos", label: "POS / Mostrador", icon: ShoppingBag },
+  { href: "/admin/live-tracking", label: "Live Tracking", icon: MapIcon },
+]
+
+const configItems = [
   { href: "/admin/categories", label: "Categories", icon: Tags },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/modifiers", label: "Modifiers", icon: Sliders },
   { href: "/admin/branches", label: "Branches", icon: Building2 },
+  { href: "/admin/delivery-zones", label: "Delivery Zones", icon: MapPin },
+  { href: "/admin/coupons", label: "Coupons", icon: Tag },
+  { href: "/admin/upsells", label: "Upsells", icon: Sparkles },
+  { href: "/admin/drivers", label: "Drivers", icon: Bike },
 ]
+
+function NavItem({ item, pathname }: { item: typeof navItems[0]; pathname: string }) {
+  const isActive =
+    item.href === "/admin"
+      ? pathname === "/admin"
+      : pathname.startsWith(item.href)
+  return (
+    <Link
+      href={item.href}
+      className={cn(
+        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+        isActive
+          ? "bg-sidebar-primary text-sidebar-primary-foreground"
+          : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+      )}
+    >
+      <item.icon className="h-4 w-4 shrink-0" />
+      {item.label}
+    </Link>
+  )
+}
 
 function NavContent({ pathname }: { pathname: string }) {
   return (
-    <nav className="flex flex-col gap-1 p-3">
-      {navItems.map((item) => {
-        const isActive =
-          item.href === "/admin"
-            ? pathname === "/admin"
-            : pathname.startsWith(item.href)
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-            )}
-          >
-            <item.icon className="h-4 w-4 shrink-0" />
-            {item.label}
-          </Link>
-        )
-      })}
+    <nav className="flex flex-col">
+      {/* Main Operations */}
+      <div className="px-3 py-2">
+        <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-1">
+          Operations
+        </p>
+        <div className="flex flex-col gap-0.5">
+          {navItems.map((item) => (
+            <NavItem key={item.href} item={item} pathname={pathname} />
+          ))}
+        </div>
+      </div>
+
+      {/* Configuration */}
+      <div className="px-3 py-2 border-t border-sidebar-border">
+        <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-1">
+          Configuration
+        </p>
+        <div className="flex flex-col gap-0.5">
+          {configItems.map((item) => (
+            <NavItem key={item.href} item={item} pathname={pathname} />
+          ))}
+        </div>
+      </div>
     </nav>
   )
 }

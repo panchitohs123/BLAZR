@@ -86,3 +86,91 @@ export interface Branch {
   deliveryZones: string[]
   isOpen: boolean
 }
+
+// ============================================
+// NEW BUSINESS FEATURES
+// ============================================
+
+export type OrderType = "online" | "pos" | "phone"
+
+export interface Coupon {
+  id: string
+  code: string
+  description?: string
+  discountType: "percentage" | "fixed_amount"
+  discountValue: number
+  minOrderAmount: number
+  maxDiscountAmount?: number
+  usageLimit?: number
+  usageCount: number
+  perUserLimit: number
+  validFrom: string
+  validUntil?: string
+  applicableTo: string[] // product IDs
+  excludedProducts: string[] // product IDs
+  isActive: boolean
+}
+
+export interface DeliveryZone {
+  id: string
+  branchId: string
+  name: string
+  color: string
+  coordinates: { lat: number; lng: number }[] // polygon
+  deliveryFee: number
+  minOrderAmount: number
+  estimatedTimeMin?: number
+  isActive: boolean
+}
+
+export interface Driver {
+  id: string
+  userId?: string
+  name: string
+  phone: string
+  email?: string
+  vehicleType?: "motorcycle" | "bicycle" | "car"
+  vehiclePlate?: string
+  isActive: boolean
+  isAvailable: boolean
+  currentLocation?: {
+    lat: number
+    lng: number
+    updatedAt: string
+  }
+}
+
+export interface UpsellRule {
+  id: string
+  name: string
+  triggerProductIds: string[]
+  triggerCategoryIds: string[]
+  suggestedProductIds: string[]
+  message: string
+  discountPercentage: number
+  priority: number
+  isActive: boolean
+}
+
+export interface OrderStatusHistory {
+  id: string
+  orderId: string
+  status: OrderStatus
+  changedBy?: string
+  changedByName?: string
+  notes?: string
+  createdAt: string
+}
+
+// Extended Order con nuevos campos
+export interface OrderExtended extends Order {
+  couponCode?: string
+  couponDiscount: number
+  deliveryZoneId?: string
+  driverId?: string
+  driverAssignedAt?: string
+  driverNotes?: string
+  pickupCode?: string
+  orderType: OrderType
+  createdBy?: string
+}

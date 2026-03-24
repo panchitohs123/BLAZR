@@ -1,0 +1,353 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Package, MapPin, Phone, LogOut, Clock, ChevronRight, Navigation, Locate } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { createClient } from "@/lib/supabase/client"
+import { updateOrderStatus } from "@/app/actions"
+import type { Order } from "@/lib/types"
+import { toast } from "sonner"
+import { useDriverLocation } from "@/hooks/use-driver-location"
+import { GoogleMapsProvider, MapView } from "@/components/maps"
+
+export default function DriverDashboardPage() {
+    const [driverId, setDriverId] = useState<string | null>(null)
+    const [driverName, setDriverName] = useState<string>("")
+    const [orders, setOrders] = useState<Order[]>([])
+    const [loading, setLoading] = useState(true)
+    const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+    const [showMap, setShowMap] = useState(false)
+    const router = useRouter()
+
+    const { isTracking, lastLocation, error } = useDriverLocation({
+        driverId,
+        enabled: true,
+        interval: 10000, // Update every 10 seconds
+        onError: (err) => {
+            if (err.code === err.PERMISSION_DENIED) {
+                toast.error("Por favor habilita la ubicación GPS para continuar")
+            }
+        },
+    })
+
+    useEffect(() => {
+        const id = localStorage.getItem("driverId")
+        const name = localStorage.getItem("driverName")
+        
+        if (!id) {
+            router.push("/driver")
+            return
+        }
+        
+        setDriverId(id)
+        setDriverName(name || "")
+        loadOrders(id)
+    }, [router])
+
+    // Realtime subscription
+    useEffect(() => {
+        if (!driverId) return
+
+        const supabase = createClient()
+        const channel = supabase
+            .channel("driver-orders")
+            .on(
+                "postgres_changes",
+                { event: "*", schema: "public", table: "orders" },
+                () => {
+                    loadOrders(driverId)
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [driverId])
+
+    const loadOrders = async (id: string) => {
+        try {
+            const response = await fetch(`/api/driver/orders?driverId=${id}`)
+            const data = await response.json()
+            setOrders(data || [])
+        } catch {
+            toast.error("Error cargando pedidos")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleLogout = () => {
+        localStorage.removeItem("driverId")
+        localStorage.removeItem("driverName")
+        router.push("/driver")
+    }
+
+    const handleStatusUpdate = async (orderId: string, status: string) => {
+        const result = await updateOrderStatus(orderId, status)
+        if (result.error) {
+            toast.error(result.error)
+        } else {
+            toast.success("Estado actualizado")
+            if (driverId) loadOrders(driverId)
+            if (status === "delivered") {
+                setSelectedOrder(null)
+                setShowMap(false)
+            }
+        }
+    }
+
+    const handleNavigate = (address: string) => {
+        // Open Google Maps with directions
+        const encodedAddress = encodeURIComponent(address)
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`, "_blank")
+    }
+
+    const activeOrders = orders.filter((o) => o.status === "ready")
+    const completedOrders = orders.filter((o) => o.status === "delivered")
+
+    // Get markers for map
+    const getMapMarkers = () => {
+        if (!selectedOrder) return []
+        
+        const markers = []
+        
+        // Driver location
+        if (lastLocation) {
+            markers.push({
+                id: "driver",
+                lat: lastLocation.lat,
+                lng: lastLocation.lng,
+                title: "Tu ubicación",
+                icon: "driver" as const,
+                color: "#22c55e",
+            })
+        }
+        
+        // Destination
+        // Mock coordinates - in production would come from order.address_lat/lng
+        markers.push({
+            id: "destination",
+            lat: -34.6037,
+            lng: -58.3816,
+            title: "Destino",
+            icon: "customer" as const,
+            color: "#ef4444",
+        })
+        
+        return markers
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <p className="text-muted-foreground">Cargando...</p>
+            </div>
+        )
+    }
+
+    return (
+        <GoogleMapsProvider>
+            <div className="min-h-screen bg-background">
+                {/* Header */}
+                <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+                    <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+                        <div>
+                            <h1 className="font-bold text-lg">Hola, {driverName}</h1>
+                            <div className="flex items-center gap-2">
+                                <p className="text-xs text-muted-foreground">
+                                    {activeOrders.length} entregas pendientes
+                                </p>
+                                {isTracking && (
+                                    <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
+                                        <Locate className="h-3 w-3 mr-1" />
+                                        GPS Activo
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={handleLogout}>
+                            <LogOut className="h-5 w-5" />
+                        </Button>
+                    </div>
+                </header>
+
+                <main className="max-w-md mx-auto px-4 py-4 space-y-4">
+                    {/* GPS Status Warning */}
+                    {error && error.code === error.PERMISSION_DENIED && (
+                        <Card className="rounded-2xl border-orange-200 bg-orange-50">
+                            <CardContent className="p-4">
+                                <p className="text-sm text-orange-800">
+                                    <strong>Ubicación desactivada:</strong> Activa el GPS para que los clientes puedan seguir tu ubicación en tiempo real.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Map Modal */}
+                    {showMap && selectedOrder && (
+                        <Card className="rounded-2xl overflow-hidden">
+                            <CardContent className="p-0">
+                                <div className="p-4 border-b border-border flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-bold">Pedido #{selectedOrder.orderNumber}</h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            {selectedOrder.address || "Retiro en local"}
+                                        </p>
+                                    </div>
+                                    <Button variant="ghost" size="sm" onClick={() => setShowMap(false)}>
+                                        Cerrar
+                                    </Button>
+                                </div>
+                                <MapView
+                                    markers={getMapMarkers()}
+                                    center={lastLocation ? { lat: lastLocation.lat, lng: lastLocation.lng } : undefined}
+                                    zoom={14}
+                                    height="300px"
+                                />
+                                <div className="p-4 flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 rounded-xl"
+                                        onClick={() => handleNavigate(selectedOrder.address || "")}
+                                    >
+                                        <Navigation className="h-4 w-4 mr-2" />
+                                        Navegar
+                                    </Button>
+                                    <Button
+                                        className="flex-1 rounded-xl"
+                                        onClick={() => handleStatusUpdate(selectedOrder.id, "delivered")}
+                                    >
+                                        Entregado
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Active Deliveries */}
+                    <section>
+                        <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+                            Entregas Activas
+                        </h2>
+                        
+                        {activeOrders.length === 0 ? (
+                            <Card className="rounded-2xl border-dashed border-2">
+                                <CardContent className="py-8 text-center">
+                                    <Package className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                                    <p className="text-sm text-muted-foreground">
+                                        No hay entregas pendientes
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="space-y-3">
+                                {activeOrders.map((order) => (
+                                    <Card key={order.id} className="rounded-2xl overflow-hidden">
+                                        <CardContent className="p-4">
+                                            <div className="flex items-start justify-between mb-3">
+                                                <div>
+                                                    <span className="text-2xl font-bold">
+                                                        #{order.orderNumber}
+                                                    </span>
+                                                    <Badge variant="outline" className="ml-2">
+                                                        Listo
+                                                    </Badge>
+                                                </div>
+                                                <span className="text-sm text-muted-foreground">
+                                                    ${order.total.toFixed(2)}
+                                                </span>
+                                            </div>
+
+                                            <div className="space-y-2 mb-4">
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                    <span className="line-clamp-2">
+                                                        {order.address || "Retiro en local"}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm">
+                                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                                    <span>{order.customerPhone}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1 rounded-xl"
+                                                    asChild
+                                                >
+                                                    <Link href={`tel:${order.customerPhone}`}>
+                                                        Llamar
+                                                    </Link>
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1 rounded-xl"
+                                                    onClick={() => {
+                                                        setSelectedOrder(order)
+                                                        setShowMap(true)
+                                                    }}
+                                                >
+                                                    <MapPin className="h-4 w-4 mr-2" />
+                                                    Mapa
+                                                </Button>
+                                                <Button
+                                                    className="flex-1 rounded-xl"
+                                                    onClick={() => handleStatusUpdate(order.id, "delivered")}
+                                                >
+                                                    Entregado
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    {/* Recent Completed */}
+                    {completedOrders.length > 0 && (
+                        <section>
+                            <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+                                Completadas Hoy
+                            </h2>
+                            <Card className="rounded-2xl">
+                                <CardContent className="p-0">
+                                    {completedOrders.slice(0, 5).map((order, idx) => (
+                                        <div
+                                            key={order.id}
+                                            className="flex items-center justify-between p-4 border-b last:border-0 border-border"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                                                    <Package className="h-5 w-5 text-green-600" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium">
+                                                        Pedido #{order.orderNumber}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {order.address || "Retiro en local"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <span className="text-sm font-medium">
+                                                ${order.total.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        </section>
+                    )}
+                </main>
+            </div>
+        </GoogleMapsProvider>
+    )
+}

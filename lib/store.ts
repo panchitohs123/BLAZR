@@ -1,11 +1,12 @@
 "use client"
 
 import { create } from "zustand"
-import type { CartItem, CartItemModifier } from "./types"
+import type { CartItem, CartItemModifier, Product } from "./types"
 
 interface CartStore {
   items: CartItem[]
   addItem: (item: Omit<CartItem, "id">) => void
+  addProduct: (product: Product, modifiers: CartItemModifier[], overridePrice?: number) => void
   removeItem: (id: string) => void
   updateQty: (id: string, quantity: number) => void
   clearCart: () => void
@@ -45,6 +46,40 @@ export const useCartStore = create<CartStore>((set, get) => ({
     } else {
       set({
         items: [...get().items, { ...item, id: generateId() }],
+      })
+    }
+  },
+
+  addProduct: (product, modifiers, overridePrice) => {
+    const finalPrice = overridePrice !== undefined ? overridePrice : product.price
+    
+    const newItem: Omit<CartItem, "id"> = {
+      productId: product.id,
+      name: product.name,
+      image: product.image,
+      price: finalPrice,
+      quantity: 1,
+      modifiers,
+    }
+
+    const existingItem = get().items.find(
+      (i) =>
+        i.productId === newItem.productId &&
+        getModifiersKey(i.modifiers) === getModifiersKey(newItem.modifiers) &&
+        i.price === finalPrice // Also check price for upsells
+    )
+
+    if (existingItem) {
+      set({
+        items: get().items.map((i) =>
+          i.id === existingItem.id
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
+        ),
+      })
+    } else {
+      set({
+        items: [...get().items, { ...newItem, id: generateId() }],
       })
     }
   },

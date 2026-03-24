@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCategories, getAllProducts, getModifierGroups, getBranches, getOrders } from "@/lib/supabase/queries"
+import { 
+    getCategories, 
+    getAllProducts, 
+    getModifierGroups, 
+    getBranches, 
+    getOrders,
+    getCoupons,
+    getAllDeliveryZones,
+    getDrivers,
+    getAllUpsellRules,
+    getOrdersByStatus
+} from "@/lib/supabase/queries"
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
@@ -17,6 +28,17 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json(await getBranches())
             case "orders":
                 return NextResponse.json(await getOrders())
+            case "coupons":
+                return NextResponse.json(await getCoupons())
+            case "delivery-zones":
+                return NextResponse.json(await getAllDeliveryZones())
+            case "drivers":
+                return NextResponse.json(await getDrivers())
+            case "upsells":
+                return NextResponse.json(await getAllUpsellRules())
+            case "kitchen-orders":
+                // Orders for kitchen display: new, accepted, preparing, ready
+                return NextResponse.json(await getOrdersByStatus(["new", "accepted", "preparing", "ready"]))
             default:
                 return NextResponse.json({ error: "Invalid type" }, { status: 400 })
         }

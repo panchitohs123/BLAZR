@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator"
 import { createClient } from "@/lib/supabase/client"
 import type { Order, OrderStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { GoogleMapsProvider, LiveTrackingMap } from "@/components/maps"
 
 interface OrderTrackerProps {
     initialOrder: Order
@@ -46,6 +47,7 @@ const statusIndex: Record<string, number> = {
 
 export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
     const [order, setOrder] = useState<Order>(initialOrder)
+    const [driverId, setDriverId] = useState<string | undefined>(initialOrder.driverId)
 
     useEffect(() => {
         const supabase = createClient()
@@ -70,7 +72,11 @@ export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
                         readyAt: row.ready_at || prev.readyAt,
                         deliveredAt: row.delivered_at || prev.deliveredAt,
                         cancelledAt: row.cancelled_at || prev.cancelledAt,
+                        driverId: row.driver_id || prev.driverId,
                     }))
+                    if (row.driver_id) {
+                        setDriverId(row.driver_id)
+                    }
                 }
             )
             .subscribe()
@@ -82,192 +88,223 @@ export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
 
     const currentStepIndex = statusIndex[order.status] ?? 0
     const isCancelled = order.status === "cancelled"
+    const showTracking = order.status === "ready" && order.deliveryMethod === "delivery" && driverId
+
+    // Mock destination coordinates - in production these would come from the order
+    const destination = {
+        lat: -34.6037,
+        lng: -58.3816,
+        address: order.address,
+    }
+
+    // Mock branch location - in production this would come from the branch
+    const branchLocation = { lat: -34.6087, lng: -58.3786 }
 
     return (
-        <div className="min-h-screen bg-background">
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-                <div className="mx-auto max-w-2xl flex items-center gap-3 px-4 py-3">
-                    <Button variant="ghost" size="icon" className="rounded-full" asChild>
-                        <Link href="/" aria-label="Back to menu">
-                            <ArrowLeft className="h-5 w-5" />
-                        </Link>
-                    </Button>
-                    <div className="flex-1">
-                        <h1
-                            className="text-lg font-bold text-foreground"
-                            style={{ fontFamily: "var(--font-heading)" }}
-                        >
-                            Order #{order.orderNumber}
-                        </h1>
-                        <p className="text-xs text-muted-foreground">
-                            Track your order in real time
-                        </p>
+        <GoogleMapsProvider>
+            <div className="min-h-screen bg-background">
+                <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+                    <div className="mx-auto max-w-2xl flex items-center gap-3 px-4 py-3">
+                        <Button variant="ghost" size="icon" className="rounded-full" asChild>
+                            <Link href="/" aria-label="Back to menu">
+                                <ArrowLeft className="h-5 w-5" />
+                            </Link>
+                        </Button>
+                        <div className="flex-1">
+                            <h1
+                                className="text-lg font-bold text-foreground"
+                                style={{ fontFamily: "var(--font-heading)" }}
+                            >
+                                Order #{order.orderNumber}
+                            </h1>
+                            <p className="text-xs text-muted-foreground">
+                                Track your order in real time
+                            </p>
+                        </div>
                     </div>
-                </div>
-            </header>
+                </header>
 
-            <main className="mx-auto max-w-2xl px-4 py-6 flex flex-col gap-6">
-                {/* Status Stepper */}
-                <Card className="rounded-2xl bg-card border-border">
-                    <CardContent className="p-6">
-                        {isCancelled ? (
-                            <div className="text-center py-4">
-                                <Badge className="bg-destructive/15 text-destructive border-destructive/20 text-sm px-4 py-1.5">
-                                    Order Cancelled
-                                </Badge>
-                                <p className="text-sm text-muted-foreground mt-3">
-                                    This order has been cancelled.
-                                </p>
-                            </div>
-                        ) : (
-                            <div className="flex items-center justify-between">
-                                {steps.map((step, i) => {
-                                    const isComplete = currentStepIndex >= i
-                                    const isCurrent = currentStepIndex === i
-                                    const StepIcon = step.icon
+                <main className="mx-auto max-w-2xl px-4 py-6 flex flex-col gap-6">
+                    {/* Status Stepper */}
+                    <Card className="rounded-2xl bg-card border-border">
+                        <CardContent className="p-6">
+                            {isCancelled ? (
+                                <div className="text-center py-4">
+                                    <Badge className="bg-destructive/15 text-destructive border-destructive/20 text-sm px-4 py-1.5">
+                                        Order Cancelled
+                                    </Badge>
+                                    <p className="text-sm text-muted-foreground mt-3">
+                                        This order has been cancelled.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between">
+                                    {steps.map((step, i) => {
+                                        const isComplete = currentStepIndex >= i
+                                        const isCurrent = currentStepIndex === i
+                                        const StepIcon = step.icon
 
-                                    return (
-                                        <div key={step.status} className="flex items-center flex-1 last:flex-none">
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div
-                                                    className={cn(
-                                                        "h-10 w-10 rounded-full flex items-center justify-center transition-all",
-                                                        isComplete
-                                                            ? "bg-primary text-primary-foreground"
-                                                            : "bg-secondary text-muted-foreground",
-                                                        isCurrent && "ring-4 ring-primary/20"
-                                                    )}
-                                                >
-                                                    <StepIcon className="h-5 w-5" />
+                                        return (
+                                            <div key={step.status} className="flex items-center flex-1 last:flex-none">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <div
+                                                        className={cn(
+                                                            "h-10 w-10 rounded-full flex items-center justify-center transition-all",
+                                                            isComplete
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "bg-secondary text-muted-foreground",
+                                                            isCurrent && "ring-4 ring-primary/20"
+                                                        )}
+                                                    >
+                                                        <StepIcon className="h-5 w-5" />
+                                                    </div>
+                                                    <span
+                                                        className={cn(
+                                                            "text-xs font-medium text-center",
+                                                            isComplete
+                                                                ? "text-primary"
+                                                                : "text-muted-foreground"
+                                                        )}
+                                                    >
+                                                        {step.label}
+                                                    </span>
                                                 </div>
-                                                <span
-                                                    className={cn(
-                                                        "text-xs font-medium text-center",
-                                                        isComplete
-                                                            ? "text-primary"
-                                                            : "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    {step.label}
-                                                </span>
+                                                {i < steps.length - 1 && (
+                                                    <div
+                                                        className={cn(
+                                                            "flex-1 h-0.5 mx-2 rounded-full transition-colors",
+                                                            currentStepIndex > i
+                                                                ? "bg-primary"
+                                                                : "bg-secondary"
+                                                        )}
+                                                    />
+                                                )}
                                             </div>
-                                            {i < steps.length - 1 && (
-                                                <div
-                                                    className={cn(
-                                                        "flex-1 h-0.5 mx-2 rounded-full transition-colors",
-                                                        currentStepIndex > i
-                                                            ? "bg-primary"
-                                                            : "bg-secondary"
-                                                    )}
-                                                />
-                                            )}
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Live Tracking Map - Only show when order is ready and has a driver */}
+                    {showTracking && (
+                        <Card className="rounded-2xl bg-card border-border overflow-hidden">
+                            <CardContent className="p-4">
+                                <h2 className="font-semibold text-card-foreground mb-4 text-sm uppercase tracking-wide">
+                                    Tu repartidor está en camino
+                                </h2>
+                                <LiveTrackingMap
+                                    orderId={order.id}
+                                    driverId={driverId}
+                                    destination={destination}
+                                    branchLocation={branchLocation}
+                                    height="300px"
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Order Details */}
+                    <Card className="rounded-2xl bg-card border-border">
+                        <CardContent className="p-5">
+                            <h2 className="font-semibold text-card-foreground mb-4 text-sm uppercase tracking-wide">
+                                Order Details
+                            </h2>
+                            <div className="flex flex-col gap-3">
+                                {order.items.map((item) => {
+                                    const modPrice = item.modifiers.reduce(
+                                        (sum, m) => sum + m.price,
+                                        0
+                                    )
+                                    return (
+                                        <div key={item.id} className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-sm text-card-foreground">
+                                                    {item.quantity}x {item.name}
+                                                </p>
+                                                {item.modifiers.length > 0 && (
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {item.modifiers.map((m) => m.optionName).join(", ")}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <span className="text-sm font-medium text-card-foreground">
+                                                ${((item.price + modPrice) * item.quantity).toFixed(2)}
+                                            </span>
                                         </div>
                                     )
                                 })}
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
 
-                {/* Order Details */}
-                <Card className="rounded-2xl bg-card border-border">
-                    <CardContent className="p-5">
-                        <h2 className="font-semibold text-card-foreground mb-4 text-sm uppercase tracking-wide">
-                            Order Details
-                        </h2>
-                        <div className="flex flex-col gap-3">
-                            {order.items.map((item) => {
-                                const modPrice = item.modifiers.reduce(
-                                    (sum, m) => sum + m.price,
-                                    0
-                                )
-                                return (
-                                    <div key={item.id} className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm text-card-foreground">
-                                                {item.quantity}x {item.name}
-                                            </p>
-                                            {item.modifiers.length > 0 && (
-                                                <p className="text-xs text-muted-foreground">
-                                                    {item.modifiers.map((m) => m.optionName).join(", ")}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <span className="text-sm font-medium text-card-foreground">
-                                            ${((item.price + modPrice) * item.quantity).toFixed(2)}
-                                        </span>
-                                    </div>
-                                )
-                            })}
-                        </div>
+                            <Separator className="my-4" />
 
-                        <Separator className="my-4" />
-
-                        <div className="flex flex-col gap-2 text-sm">
-                            <div className="flex justify-between text-muted-foreground">
-                                <span>Subtotal</span>
-                                <span>${order.subtotal.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-muted-foreground">
-                                <span>Delivery</span>
-                                <span>
-                                    {order.deliveryFee > 0
-                                        ? `$${order.deliveryFee.toFixed(2)}`
-                                        : "Free"}
-                                </span>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between font-bold text-lg text-card-foreground">
-                                <span>Total</span>
-                                <span className="text-primary">${order.total.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Customer Info */}
-                <Card className="rounded-2xl bg-card border-border">
-                    <CardContent className="p-5">
-                        <h2 className="font-semibold text-card-foreground mb-4 text-sm uppercase tracking-wide">
-                            Info
-                        </h2>
-                        <div className="flex flex-col gap-3 text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <Phone className="h-4 w-4" />
-                                <span>{order.customerName} · {order.customerPhone}</span>
-                            </div>
-                            {order.deliveryMethod === "delivery" && order.address && (
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <MapPin className="h-4 w-4" />
-                                    <span>{order.address}</span>
+                            <div className="flex flex-col gap-2 text-sm">
+                                <div className="flex justify-between text-muted-foreground">
+                                    <span>Subtotal</span>
+                                    <span>${order.subtotal.toFixed(2)}</span>
                                 </div>
-                            )}
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                {order.paymentMethod === "mercadopago" ? (
-                                    <CreditCard className="h-4 w-4" />
-                                ) : (
-                                    <Banknote className="h-4 w-4" />
-                                )}
-                                <span className="capitalize">{order.paymentMethod}</span>
+                                <div className="flex justify-between text-muted-foreground">
+                                    <span>Delivery</span>
+                                    <span>
+                                        {order.deliveryFee > 0
+                                            ? `$${order.deliveryFee.toFixed(2)}`
+                                            : "Free"}
+                                    </span>
+                                </div>
+                                <Separator />
+                                <div className="flex justify-between font-bold text-lg text-card-foreground">
+                                    <span>Total</span>
+                                    <span className="text-primary">${order.total.toFixed(2)}</span>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                {order.deliveryMethod === "delivery" ? (
-                                    <Truck className="h-4 w-4" />
-                                ) : (
-                                    <Package className="h-4 w-4" />
-                                )}
-                                <span className="capitalize">{order.deliveryMethod}</span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
 
-                <div className="text-center">
-                    <Button asChild variant="outline" className="rounded-xl">
-                        <Link href="/">Order Again</Link>
-                    </Button>
-                </div>
-            </main>
-        </div>
+                    {/* Customer Info */}
+                    <Card className="rounded-2xl bg-card border-border">
+                        <CardContent className="p-5">
+                            <h2 className="font-semibold text-card-foreground mb-4 text-sm uppercase tracking-wide">
+                                Info
+                            </h2>
+                            <div className="flex flex-col gap-3 text-sm">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Phone className="h-4 w-4" />
+                                    <span>{order.customerName} · {order.customerPhone}</span>
+                                </div>
+                                {order.deliveryMethod === "delivery" && order.address && (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <MapPin className="h-4 w-4" />
+                                        <span>{order.address}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    {order.paymentMethod === "mercadopago" ? (
+                                        <CreditCard className="h-4 w-4" />
+                                    ) : (
+                                        <Banknote className="h-4 w-4" />
+                                    )}
+                                    <span className="capitalize">{order.paymentMethod}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    {order.deliveryMethod === "delivery" ? (
+                                        <Truck className="h-4 w-4" />
+                                    ) : (
+                                        <Package className="h-4 w-4" />
+                                    )}
+                                    <span className="capitalize">{order.deliveryMethod}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <div className="text-center">
+                        <Button asChild variant="outline" className="rounded-xl">
+                            <Link href="/">Order Again</Link>
+                        </Button>
+                    </div>
+                </main>
+            </div>
+        </GoogleMapsProvider>
     )
 }
