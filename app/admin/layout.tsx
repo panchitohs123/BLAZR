@@ -16,7 +16,6 @@ import {
   ChefHat,
   Tag,
   Bike,
-  MapPin,
   Sparkles,
   Map as MapIcon,
 } from "lucide-react"
@@ -39,8 +38,7 @@ const configItems = [
   { href: "/admin/categories", label: "Categories", icon: Tags },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/modifiers", label: "Modifiers", icon: Sliders },
-  { href: "/admin/branches", label: "Branches", icon: Building2 },
-  { href: "/admin/delivery-zones", label: "Delivery Zones", icon: MapPin },
+  { href: "/admin/branches", label: "Sucursales", icon: Building2 },
   { href: "/admin/coupons", label: "Coupons", icon: Tag },
   { href: "/admin/upsells", label: "Upsells", icon: Sparkles },
   { href: "/admin/drivers", label: "Drivers", icon: Bike },

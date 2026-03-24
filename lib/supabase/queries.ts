@@ -151,7 +151,8 @@ export async function getBranches(): Promise<Branch[]> {
         id: row.id,
         name: row.nombre,
         address: row.direccion || "",
-        deliveryZones: row.zonas_delivery || [],
+        lat: row.lat ? parseFloat(row.lat) : null,
+        lng: row.lng ? parseFloat(row.lng) : null,
         isOpen: row.is_open,
     }))
 }

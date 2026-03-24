@@ -58,7 +58,6 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -86,17 +85,13 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
-}
-
-html[data-blazr-preloader-state='pending'] body {
-  overflow: hidden;
-}
-
-html[data-blazr-preloader-state='pending'] .blazr-app-shell {
-  opacity: 0;
-  pointer-events: none;
+  html {
+    @apply scroll-smooth;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
 }
 
 .blazr-app-shell {
@@ -135,5 +130,43 @@ html[data-blazr-preloader-state='pending'] .blazr-app-shell {
   .product-modal-scroll::-webkit-scrollbar-thumb:hover {
     background: color-mix(in oklch, var(--accent) 65%, var(--primary));
     background-clip: padding-box;
+  }
+
+  /* Mejoras para móvil */
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+@layer utilities {
+  /* Prevenir zoom en inputs en iOS */
+  input[type="tel"],
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="password"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  
+  /* Animación suave para botones */
+  .active\:scale-95:active {
+    transform: scale(0.95);
+  }
+  
+  /* Soporte para notch en iPhone */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .min-h-screen {
+      min-height: -webkit-fill-available;
+    }
   }
 }

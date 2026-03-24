@@ -415,7 +415,8 @@ export async function updateModifierGroup(
 export async function createBranch(data: {
     nombre: string
     direccion?: string
-    zonasDelivery?: string[]
+    lat?: number
+    lng?: number
     isOpen?: boolean
 }) {
     const supabase = await createClient()
@@ -423,7 +424,8 @@ export async function createBranch(data: {
     const { error } = await supabase.from("sucursales").insert({
         nombre: data.nombre,
         direccion: data.direccion || "",
-        zonas_delivery: data.zonasDelivery || [],
+        lat: data.lat,
+        lng: data.lng,
         is_open: data.isOpen ?? true,
     })
 
@@ -438,7 +440,8 @@ export async function updateBranch(
     data: {
         nombre?: string
         direccion?: string
-        zonasDelivery?: string[]
+        lat?: number | null
+        lng?: number | null
         isOpen?: boolean
     }
 ) {
@@ -447,7 +450,8 @@ export async function updateBranch(
     const updateData: Record<string, any> = {}
     if (data.nombre !== undefined) updateData.nombre = data.nombre
     if (data.direccion !== undefined) updateData.direccion = data.direccion
-    if (data.zonasDelivery !== undefined) updateData.zonas_delivery = data.zonasDelivery
+    if (data.lat !== undefined) updateData.lat = data.lat
+    if (data.lng !== undefined) updateData.lng = data.lng
     if (data.isOpen !== undefined) updateData.is_open = data.isOpen
 
     const { error } = await supabase

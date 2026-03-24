@@ -44,8 +44,8 @@ export const viewport: Viewport = {
   themeColor: '#1a1a1f',
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 }
 
 const preloaderBootstrapScript = `

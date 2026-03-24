@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Package, MapPin, Phone, LogOut, Clock, ChevronRight, Navigation, Locate } from "lucide-react"
+import { Package, MapPin, Phone, LogOut, Clock, Navigation, Locate, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,12 +21,13 @@ export default function DriverDashboardPage() {
     const [loading, setLoading] = useState(true)
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [showMap, setShowMap] = useState(false)
+    const [storageError, setStorageError] = useState(false)
     const router = useRouter()
 
     const { isTracking, lastLocation, error } = useDriverLocation({
         driverId,
         enabled: true,
-        interval: 10000, // Update every 10 seconds
+        interval: 10000,
         onError: (err) => {
             if (err.code === err.PERMISSION_DENIED) {
                 toast.error("Por favor habilita la ubicación GPS para continuar")
@@ -35,8 +36,29 @@ export default function DriverDashboardPage() {
     })
 
     useEffect(() => {
-        const id = localStorage.getItem("driverId")
-        const name = localStorage.getItem("driverName")
+        // Intentar obtener de localStorage primero, luego sessionStorage
+        let id = null
+        let name = null
+        
+        try {
+            id = localStorage.getItem("driverId")
+            name = localStorage.getItem("driverName")
+        } catch {
+            // localStorage no disponible
+        }
+        
+        // Fallback a sessionStorage
+        if (!id) {
+            try {
+                id = sessionStorage.getItem("driverId")
+                name = sessionStorage.getItem("driverName")
+                if (id) {
+                    setStorageError(true)
+                }
+            } catch {
+                // Ningún storage disponible
+            }
+        }
         
         if (!id) {
             router.push("/driver")
@@ -48,7 +70,6 @@ export default function DriverDashboardPage() {
         loadOrders(id)
     }, [router])
 
-    // Realtime subscription
     useEffect(() => {
         if (!driverId) return
 
@@ -82,8 +103,14 @@ export default function DriverDashboardPage() {
     }
 
     const handleLogout = () => {
-        localStorage.removeItem("driverId")
-        localStorage.removeItem("driverName")
+        try {
+            localStorage.removeItem("driverId")
+            localStorage.removeItem("driverName")
+        } catch {}
+        try {
+            sessionStorage.removeItem("driverId")
+            sessionStorage.removeItem("driverName")
+        } catch {}
         router.push("/driver")
     }
 
@@ -102,7 +129,6 @@ export default function DriverDashboardPage() {
     }
 
     const handleNavigate = (address: string) => {
-        // Open Google Maps with directions
         const encodedAddress = encodeURIComponent(address)
         window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`, "_blank")
     }
@@ -110,13 +136,11 @@ export default function DriverDashboardPage() {
     const activeOrders = orders.filter((o) => o.status === "ready")
     const completedOrders = orders.filter((o) => o.status === "delivered")
 
-    // Get markers for map
     const getMapMarkers = () => {
         if (!selectedOrder) return []
         
         const markers = []
         
-        // Driver location
         if (lastLocation) {
             markers.push({
                 id: "driver",
@@ -128,8 +152,6 @@ export default function DriverDashboardPage() {
             })
         }
         
-        // Destination
-        // Mock coordinates - in production would come from order.address_lat/lng
         markers.push({
             id: "destination",
             lat: -34.6037,
@@ -153,19 +175,18 @@ export default function DriverDashboardPage() {
     return (
         <GoogleMapsProvider>
             <div className="min-h-screen bg-background">
-                {/* Header */}
                 <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
                     <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-                        <div>
-                            <h1 className="font-bold text-lg">Hola, {driverName}</h1>
-                            <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                            <h1 className="font-bold text-lg truncate">Hola, {driverName}</h1>
+                            <div className="flex items-center gap-2 flex-wrap">
                                 <p className="text-xs text-muted-foreground">
                                     {activeOrders.length} entregas pendientes
                                 </p>
                                 {isTracking && (
                                     <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
                                         <Locate className="h-3 w-3 mr-1" />
-                                        GPS Activo
+                                        GPS
                                     </Badge>
                                 )}
                             </div>
@@ -177,25 +198,37 @@ export default function DriverDashboardPage() {
                 </header>
 
                 <main className="max-w-md mx-auto px-4 py-4 space-y-4">
-                    {/* GPS Status Warning */}
+                    {storageError && (
+                        <Card className="rounded-2xl border-orange-200 bg-orange-50">
+                            <CardContent className="p-4 flex gap-3">
+                                <AlertCircle className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm text-orange-800 font-medium">Modo privado detectado</p>
+                                    <p className="text-xs text-orange-700 mt-1">
+                                        Estás en modo incógnito. Tu sesión no se guardará si cierras el navegador.
+                                    </p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {error && error.code === error.PERMISSION_DENIED && (
                         <Card className="rounded-2xl border-orange-200 bg-orange-50">
                             <CardContent className="p-4">
                                 <p className="text-sm text-orange-800">
-                                    <strong>Ubicación desactivada:</strong> Activa el GPS para que los clientes puedan seguir tu ubicación en tiempo real.
+                                    <strong>Ubicación desactivada:</strong> Activa el GPS para que los clientes puedan seguir tu ubicación.
                                 </p>
                             </CardContent>
                         </Card>
                     )}
 
-                    {/* Map Modal */}
                     {showMap && selectedOrder && (
                         <Card className="rounded-2xl overflow-hidden">
                             <CardContent className="p-0">
                                 <div className="p-4 border-b border-border flex items-center justify-between">
-                                    <div>
+                                    <div className="min-w-0">
                                         <h3 className="font-bold">Pedido #{selectedOrder.orderNumber}</h3>
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="text-xs text-muted-foreground truncate">
                                             {selectedOrder.address || "Retiro en local"}
                                         </p>
                                     </div>
@@ -229,7 +262,6 @@ export default function DriverDashboardPage() {
                         </Card>
                     )}
 
-                    {/* Active Deliveries */}
                     <section>
                         <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
                             Entregas Activas
@@ -265,13 +297,13 @@ export default function DriverDashboardPage() {
 
                                             <div className="space-y-2 mb-4">
                                                 <div className="flex items-center gap-2 text-sm">
-                                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                    <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
                                                     <span className="line-clamp-2">
                                                         {order.address || "Retiro en local"}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center gap-2 text-sm">
-                                                    <Phone className="h-4 w-4 text-muted-foreground" />
+                                                    <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
                                                     <span>{order.customerPhone}</span>
                                                 </div>
                                             </div>
@@ -301,7 +333,7 @@ export default function DriverDashboardPage() {
                                                     className="flex-1 rounded-xl"
                                                     onClick={() => handleStatusUpdate(order.id, "delivered")}
                                                 >
-                                                    Entregado
+                                                    Entregar
                                                 </Button>
                                             </div>
                                         </CardContent>
@@ -311,7 +343,6 @@ export default function DriverDashboardPage() {
                         )}
                     </section>
 
-                    {/* Recent Completed */}
                     {completedOrders.length > 0 && (
                         <section>
                             <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
@@ -319,25 +350,25 @@ export default function DriverDashboardPage() {
                             </h2>
                             <Card className="rounded-2xl">
                                 <CardContent className="p-0">
-                                    {completedOrders.slice(0, 5).map((order, idx) => (
+                                    {completedOrders.slice(0, 5).map((order) => (
                                         <div
                                             key={order.id}
                                             className="flex items-center justify-between p-4 border-b last:border-0 border-border"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
                                                     <Package className="h-5 w-5 text-green-600" />
                                                 </div>
-                                                <div>
-                                                    <p className="font-medium">
+                                                <div className="min-w-0">
+                                                    <p className="font-medium truncate">
                                                         Pedido #{order.orderNumber}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground">
+                                                    <p className="text-xs text-muted-foreground truncate">
                                                         {order.address || "Retiro en local"}
                                                     </p>
                                                 </div>
                                             </div>
-                                            <span className="text-sm font-medium">
+                                            <span className="text-sm font-medium shrink-0">
                                                 ${order.total.toFixed(2)}
                                             </span>
                                         </div>

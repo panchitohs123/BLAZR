@@ -83,7 +83,8 @@ export interface Branch {
   id: string
   name: string
   address: string
-  deliveryZones: string[]
+  lat: number | null
+  lng: number | null
   isOpen: boolean
 }
 
