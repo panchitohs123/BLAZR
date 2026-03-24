@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
-import { Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps"
+import { useEffect, useState, useCallback, useRef } from "react"
+import { Map, AdvancedMarker, Pin, useMap } from "@vis.gl/react-google-maps"
 import { Card, CardContent } from "@/components/ui/card"
 import { createClient } from "@/lib/supabase/client"
-import { Navigation, Clock, Bike, MapPin } from "lucide-react"
+import { Navigation, Clock, Bike, MapPin, Gauge } from "lucide-react"
 
 interface LiveTrackingMapProps {
     orderId: string
@@ -17,19 +17,93 @@ interface LiveTrackingMapProps {
 interface DriverLocation {
     lat: number
     lng: number
+    accuracy: number | null
+    heading: number | null
+    speed: number | null
     updatedAt: string
 }
 
-const defaultCenter = { lat: -34.6037, lng: -58.3816 }
+interface RouteInfo {
+    distanceKm: number
+    durationMinutes: number
+    polyline: string | null
+}
 
-// Calcular distancia entre dos puntos (Haversine formula)
-function calculateDistance(
+// Decode Google encoded polyline into LatLng array
+function decodePolyline(encoded: string): google.maps.LatLngLiteral[] {
+    const points: google.maps.LatLngLiteral[] = []
+    let index = 0
+    let lat = 0
+    let lng = 0
+
+    while (index < encoded.length) {
+        let shift = 0
+        let result = 0
+        let byte: number
+
+        do {
+            byte = encoded.charCodeAt(index++) - 63
+            result |= (byte & 0x1f) << shift
+            shift += 5
+        } while (byte >= 0x20)
+
+        lat += result & 1 ? ~(result >> 1) : result >> 1
+
+        shift = 0
+        result = 0
+
+        do {
+            byte = encoded.charCodeAt(index++) - 63
+            result |= (byte & 0x1f) << shift
+            shift += 5
+        } while (byte >= 0x20)
+
+        lng += result & 1 ? ~(result >> 1) : result >> 1
+
+        points.push({ lat: lat / 1e5, lng: lng / 1e5 })
+    }
+
+    return points
+}
+
+// Component to render polyline on the map
+function RoutePolyline({ encodedPath }: { encodedPath: string }) {
+    const map = useMap()
+    const polylineRef = useRef<google.maps.Polyline | null>(null)
+
+    useEffect(() => {
+        if (!map || !encodedPath) return
+
+        // Clean up previous polyline
+        polylineRef.current?.setMap(null)
+
+        const path = decodePolyline(encodedPath)
+
+        polylineRef.current = new google.maps.Polyline({
+            path,
+            geodesic: true,
+            strokeColor: "#3b82f6",
+            strokeOpacity: 0.8,
+            strokeWeight: 5,
+            map,
+        })
+
+        return () => {
+            polylineRef.current?.setMap(null)
+        }
+    }, [map, encodedPath])
+
+    return null
+}
+
+// Haversine fallback when Directions API is unavailable
+function haversineDistance(
     lat1: number,
     lng1: number,
     lat2: number,
     lng2: number
 ): number {
-    const R = 6371 // Radio de la Tierra en km
+    const R = 6371
     const dLat = ((lat2 - lat1) * Math.PI) / 180
     const dLng = ((lng2 - lng1) * Math.PI) / 180
     const a =
@@ -38,86 +112,7 @@ function calculateDistance(
             Math.cos((lat2 * Math.PI) / 180) *
             Math.sin(dLng / 2) *
             Math.sin(dLng / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
-}
-
-// Estimar tiempo de llegada (asumiendo velocidad promedio de 15 km/h en moto)
-function estimateTime(distanceKm: number): number {
-    const speedKmh = 15 // velocidad promedio repartidor
-    return Math.round((distanceKm / speedKmh) * 60) // en minutos
-}
-
-// Marcador tradicional que funciona sin Map ID
-function TraditionalMarker({
-    map,
-    position,
-    color = "#22c55e",
-    children,
-    title,
-    scale = 1,
-}: {
-    map: google.maps.Map
-    position: google.maps.LatLngLiteral
-    color?: string
-    children?: React.ReactNode
-    title?: string
-    scale?: number
-}) {
-    const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
-
-    useEffect(() => {
-        const container = document.createElement("div")
-        container.style.position = "relative"
-        container.style.display = "flex"
-        container.style.alignItems = "center"
-        container.style.justifyContent = "center"
-
-        if (children) {
-            // Si hay children (componente React), renderizarlos
-            container.innerHTML = `
-                <div style="
-                    width: ${40 * scale}px;
-                    height: ${40 * scale}px;
-                    background-color: ${color};
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border: 3px solid white;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                ">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="M12 6v6l4 2"/>
-                    </svg>
-                </div>
-            `
-        } else {
-            // Marcador simple
-            container.innerHTML = `
-                <svg width="${32 * scale}" height="${40 * scale}" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="${color}"/>
-                    <circle cx="16" cy="16" r="8" fill="white"/>
-                </svg>
-            `
-        }
-
-        const marker = new google.maps.marker.AdvancedMarkerElement({
-            map,
-            position,
-            title,
-            content: container,
-        })
-
-        markerRef.current = marker
-
-        return () => {
-            marker.map = null
-        }
-    }, [map, position, color, children, title, scale])
-
-    return null
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 export function LiveTrackingMap({
@@ -129,10 +124,49 @@ export function LiveTrackingMap({
 }: LiveTrackingMapProps) {
     const [driverLocation, setDriverLocation] = useState<DriverLocation | null>(null)
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
-    const [distance, setDistance] = useState<number | null>(null)
-    const [eta, setEta] = useState<number | null>(null)
-    const [map, setMap] = useState<google.maps.Map | null>(null)
+    const [route, setRoute] = useState<RouteInfo | null>(null)
+    const [routeLoading, setRouteLoading] = useState(false)
     const hasMapId = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID
+
+    // Fetch real route from Directions API
+    const fetchRoute = useCallback(
+        async (driverLat: number, driverLng: number) => {
+            setRouteLoading(true)
+            try {
+                const params = new URLSearchParams({
+                    originLat: driverLat.toString(),
+                    originLng: driverLng.toString(),
+                    destLat: destination.lat.toString(),
+                    destLng: destination.lng.toString(),
+                })
+                const res = await fetch(`/api/directions?${params}`)
+                if (!res.ok) throw new Error("Route fetch failed")
+
+                const data = await res.json()
+                setRoute({
+                    distanceKm: data.distanceKm,
+                    durationMinutes: data.durationMinutes,
+                    polyline: data.polyline,
+                })
+            } catch {
+                // Fallback to Haversine
+                const dist = haversineDistance(
+                    driverLat,
+                    driverLng,
+                    destination.lat,
+                    destination.lng
+                )
+                setRoute({
+                    distanceKm: +dist.toFixed(2),
+                    durationMinutes: Math.ceil((dist / 15) * 60),
+                    polyline: null,
+                })
+            } finally {
+                setRouteLoading(false)
+            }
+        },
+        [destination.lat, destination.lng]
+    )
 
     // Subscribe to driver location updates
     useEffect(() => {
@@ -140,7 +174,15 @@ export function LiveTrackingMap({
 
         const supabase = createClient()
 
-        // Initial fetch
+        const parseLocation = (loc: any): DriverLocation => ({
+            lat: parseFloat(loc.lat),
+            lng: parseFloat(loc.lng),
+            accuracy: loc.accuracy != null ? parseFloat(loc.accuracy) : null,
+            heading: loc.heading != null ? parseFloat(loc.heading) : null,
+            speed: loc.speed != null ? parseFloat(loc.speed) : null,
+            updatedAt: loc.updated_at,
+        })
+
         const fetchDriverLocation = async () => {
             const { data } = await supabase
                 .from("drivers")
@@ -149,30 +191,15 @@ export function LiveTrackingMap({
                 .single()
 
             if (data?.current_location) {
-                const loc = data.current_location as any
-                const location = {
-                    lat: parseFloat(loc.lat),
-                    lng: parseFloat(loc.lng),
-                    updatedAt: loc.updated_at,
-                }
+                const location = parseLocation(data.current_location)
                 setDriverLocation(location)
-                setLastUpdated(new Date(loc.updated_at))
-
-                // Calculate distance and ETA
-                const dist = calculateDistance(
-                    location.lat,
-                    location.lng,
-                    destination.lat,
-                    destination.lng
-                )
-                setDistance(dist)
-                setEta(estimateTime(dist))
+                setLastUpdated(new Date(location.updatedAt))
+                fetchRoute(location.lat, location.lng)
             }
         }
 
         fetchDriverLocation()
 
-        // Subscribe to realtime updates
         const channel = supabase
             .channel(`driver-location-${driverId}`)
             .on(
@@ -186,23 +213,10 @@ export function LiveTrackingMap({
                 (payload) => {
                     const loc = (payload.new as any).current_location
                     if (loc) {
-                        const location = {
-                            lat: parseFloat(loc.lat),
-                            lng: parseFloat(loc.lng),
-                            updatedAt: loc.updated_at,
-                        }
+                        const location = parseLocation(loc)
                         setDriverLocation(location)
                         setLastUpdated(new Date())
-
-                        // Recalculate distance and ETA
-                        const dist = calculateDistance(
-                            location.lat,
-                            location.lng,
-                            destination.lat,
-                            destination.lng
-                        )
-                        setDistance(dist)
-                        setEta(estimateTime(dist))
+                        fetchRoute(location.lat, location.lng)
                     }
                 }
             )
@@ -211,9 +225,8 @@ export function LiveTrackingMap({
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [driverId, destination])
+    }, [driverId, fetchRoute])
 
-    // Calculate center between driver and destination
     const center = driverLocation
         ? {
               lat: (driverLocation.lat + destination.lat) / 2,
@@ -221,15 +234,17 @@ export function LiveTrackingMap({
           }
         : destination
 
-    const handleMapLoad = useCallback((mapInstance: google.maps.Map) => {
-        setMap(mapInstance)
-    }, [])
+    // Format speed for display
+    const speedDisplay =
+        driverLocation?.speed != null
+            ? `${(driverLocation.speed * 3.6).toFixed(0)} km/h`
+            : null
 
     return (
         <div className="space-y-4">
             {/* Stats cards */}
             {driverLocation && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className={`grid gap-3 ${speedDisplay ? "grid-cols-3" : "grid-cols-2"}`}>
                     <Card className="rounded-xl">
                         <CardContent className="p-4 flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -238,7 +253,7 @@ export function LiveTrackingMap({
                             <div>
                                 <p className="text-xs text-muted-foreground">Distancia</p>
                                 <p className="font-bold text-lg">
-                                    {distance !== null ? `${distance.toFixed(1)} km` : "--"}
+                                    {route ? `${route.distanceKm} km` : "--"}
                                 </p>
                             </div>
                         </CardContent>
@@ -251,11 +266,24 @@ export function LiveTrackingMap({
                             <div>
                                 <p className="text-xs text-muted-foreground">Llegada estimada</p>
                                 <p className="font-bold text-lg">
-                                    {eta !== null ? `~${eta} min` : "--"}
+                                    {route ? `~${route.durationMinutes} min` : "--"}
                                 </p>
                             </div>
                         </CardContent>
                     </Card>
+                    {speedDisplay && (
+                        <Card className="rounded-xl">
+                            <CardContent className="p-4 flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                                    <Gauge className="h-5 w-5 text-orange-600" />
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Velocidad</p>
+                                    <p className="font-bold text-lg">{speedDisplay}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             )}
 
@@ -267,61 +295,61 @@ export function LiveTrackingMap({
                     gestureHandling="greedy"
                     disableDefaultUI={false}
                     mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || undefined}
-                    onLoad={handleMapLoad}
                 >
-                    {/* Driver marker with Map ID */}
-                    {driverLocation && hasMapId && (
+                    {/* Route polyline */}
+                    {route?.polyline && <RoutePolyline encodedPath={route.polyline} />}
+
+                    {/* Driver marker */}
+                    {driverLocation && (
                         <AdvancedMarker
                             position={{ lat: driverLocation.lat, lng: driverLocation.lng }}
                             title="Repartidor"
                         >
                             <div className="relative">
+                                {/* Accuracy circle indicator */}
+                                {driverLocation.accuracy != null && driverLocation.accuracy > 30 && (
+                                    <div
+                                        className="absolute rounded-full bg-green-500/15 border border-green-500/30"
+                                        style={{
+                                            width: `${Math.min(driverLocation.accuracy, 80)}px`,
+                                            height: `${Math.min(driverLocation.accuracy, 80)}px`,
+                                            top: "50%",
+                                            left: "50%",
+                                            transform: "translate(-50%, -50%)",
+                                        }}
+                                    />
+                                )}
                                 <div className="absolute -inset-2 bg-green-500/30 rounded-full animate-ping" />
-                                <div className="relative h-10 w-10 rounded-full bg-green-500 flex items-center justify-center shadow-lg border-2 border-white">
-                                    <Bike className="h-5 w-5 text-white" />
+                                <div
+                                    className="relative h-10 w-10 rounded-full bg-green-500 flex items-center justify-center shadow-lg border-2 border-white transition-transform"
+                                    style={
+                                        driverLocation.heading != null
+                                            ? { transform: `rotate(${driverLocation.heading}deg)` }
+                                            : undefined
+                                    }
+                                >
+                                    {driverLocation.heading != null ? (
+                                        <Navigation className="h-5 w-5 text-white" />
+                                    ) : (
+                                        <Bike className="h-5 w-5 text-white" />
+                                    )}
                                 </div>
                             </div>
                         </AdvancedMarker>
                     )}
 
-                    {/* Driver marker without Map ID */}
-                    {driverLocation && !hasMapId && map && (
-                        <TraditionalMarker
-                            map={map}
-                            position={{ lat: driverLocation.lat, lng: driverLocation.lng }}
-                            color="#22c55e"
-                            title="Repartidor"
-                            scale={1}
-                        >
-                            <Bike className="h-5 w-5 text-white" />
-                        </TraditionalMarker>
-                    )}
+                    {/* Destination marker */}
+                    <AdvancedMarker
+                        position={{ lat: destination.lat, lng: destination.lng }}
+                        title="Tu ubicación"
+                    >
+                        <div className="h-10 w-10 rounded-full bg-red-500 flex items-center justify-center shadow-lg border-2 border-white">
+                            <MapPin className="h-5 w-5 text-white" />
+                        </div>
+                    </AdvancedMarker>
 
-                    {/* Destination marker with Map ID */}
-                    {hasMapId && (
-                        <AdvancedMarker
-                            position={{ lat: destination.lat, lng: destination.lng }}
-                            title="Tu ubicación"
-                        >
-                            <div className="h-10 w-10 rounded-full bg-red-500 flex items-center justify-center shadow-lg border-2 border-white">
-                                <MapPin className="h-5 w-5 text-white" />
-                            </div>
-                        </AdvancedMarker>
-                    )}
-
-                    {/* Destination marker without Map ID */}
-                    {!hasMapId && map && (
-                        <TraditionalMarker
-                            map={map}
-                            position={{ lat: destination.lat, lng: destination.lng }}
-                            color="#ef4444"
-                            title="Tu ubicación"
-                            scale={1}
-                        />
-                    )}
-
-                    {/* Branch marker with Map ID */}
-                    {branchLocation && hasMapId && (
+                    {/* Branch marker */}
+                    {branchLocation && (
                         <AdvancedMarker
                             position={{ lat: branchLocation.lat, lng: branchLocation.lng }}
                             title="Restaurante"
@@ -334,25 +362,21 @@ export function LiveTrackingMap({
                             />
                         </AdvancedMarker>
                     )}
-
-                    {/* Branch marker without Map ID */}
-                    {branchLocation && !hasMapId && map && (
-                        <TraditionalMarker
-                            map={map}
-                            position={{ lat: branchLocation.lat, lng: branchLocation.lng }}
-                            color="#1f2937"
-                            title="Restaurante"
-                            scale={1.2}
-                        />
-                    )}
                 </Map>
             </div>
 
             {/* Last updated */}
             {lastUpdated && (
-                <p className="text-xs text-muted-foreground text-center">
-                    Última actualización: {lastUpdated.toLocaleTimeString()}
-                </p>
+                <div className="flex items-center justify-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                        Última actualización: {lastUpdated.toLocaleTimeString()}
+                    </p>
+                    {driverLocation?.accuracy != null && (
+                        <span className="text-xs text-muted-foreground">
+                            (±{Math.round(driverLocation.accuracy)}m)
+                        </span>
+                    )}
+                </div>
             )}
 
             {!driverLocation && driverId && (

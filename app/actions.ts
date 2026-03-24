@@ -799,19 +799,55 @@ export async function deleteDriver(id: string) {
     return { success: true }
 }
 
-export async function updateDriverLocation(driverId: string, lat: number, lng: number) {
+export async function updateDriverLocation(
+    driverId: string,
+    lat: number,
+    lng: number,
+    extra?: {
+        accuracy?: number
+        speed?: number | null
+        heading?: number | null
+        altitude?: number | null
+    }
+) {
     const supabase = createAdminClient()
+    const now = new Date().toISOString()
 
+    // Update current_location on drivers (includes accuracy for UI indicators)
     const { data, error } = await supabase
         .from("drivers")
         .update({
-            current_location: { lat, lng, updated_at: new Date().toISOString() },
+            current_location: {
+                lat,
+                lng,
+                accuracy: extra?.accuracy ?? null,
+                heading: extra?.heading ?? null,
+                speed: extra?.speed ?? null,
+                updated_at: now,
+            },
         })
         .eq("id", driverId)
         .select("id")
 
     if (error) return { error: error.message }
     if (!data || data.length === 0) return { error: "Driver not found" }
+
+    // Insert into location history for tracking analytics
+    // Fire-and-forget — don't block the response
+    supabase
+        .from("driver_location_history")
+        .insert({
+            driver_id: driverId,
+            lat,
+            lng,
+            accuracy: extra?.accuracy ?? null,
+            speed: extra?.speed != null ? extra.speed * 3.6 : null, // m/s → km/h
+            heading: extra?.heading ?? null,
+        })
+        .then(({ error: histErr }) => {
+            if (histErr) console.error("Error inserting location history:", histErr.message)
+        })
+
     return { success: true }
 }
 

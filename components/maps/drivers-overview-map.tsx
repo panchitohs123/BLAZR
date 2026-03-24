@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import type { Driver } from "@/lib/types"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Bike, Package, Clock } from "lucide-react"
+import { Bike, Package, Clock, Navigation, Gauge, Signal } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -42,6 +42,11 @@ function DriverMarker({
         ? "bg-green-500"
         : "bg-gray-500"
 
+    const hasHeading = driver.currentLocation.heading != null
+    const isStale =
+        driver.currentLocation.updatedAt &&
+        Date.now() - new Date(driver.currentLocation.updatedAt).getTime() > 5 * 60 * 1000
+
     return (
         <AdvancedMarker
             position={{
@@ -52,19 +57,57 @@ function DriverMarker({
             onClick={onClick}
         >
             <div className={`relative ${isSelected ? "z-10" : ""}`}>
+                {/* Accuracy circle — shown when accuracy > 50m */}
+                {driver.currentLocation.accuracy != null &&
+                    driver.currentLocation.accuracy > 50 && (
+                        <div
+                            className="absolute rounded-full bg-current/10 border border-current/20"
+                            style={{
+                                width: `${Math.min(driver.currentLocation.accuracy * 0.5, 60)}px`,
+                                height: `${Math.min(driver.currentLocation.accuracy * 0.5, 60)}px`,
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                color: driver.activeOrder
+                                    ? "#3b82f6"
+                                    : driver.isAvailable
+                                    ? "#22c55e"
+                                    : "#6b7280",
+                            }}
+                        />
+                    )}
+
                 {driver.activeOrder && (
                     <div className="absolute -inset-2 bg-blue-500/30 rounded-full animate-pulse" />
                 )}
+
                 <div
                     className={`relative h-10 w-10 rounded-full flex items-center justify-center shadow-lg border-2 border-white transition-transform ${color} ${
                         isSelected ? "scale-125" : ""
-                    }`}
+                    } ${isStale ? "opacity-50" : ""}`}
+                    style={
+                        hasHeading
+                            ? { transform: `rotate(${driver.currentLocation.heading}deg)${isSelected ? " scale(1.25)" : ""}` }
+                            : undefined
+                    }
                 >
-                    <Bike className="h-5 w-5 text-white" />
+                    {hasHeading ? (
+                        <Navigation className="h-5 w-5 text-white" />
+                    ) : (
+                        <Bike className="h-5 w-5 text-white" />
+                    )}
                 </div>
+
                 {driver.activeOrder && (
                     <div className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white font-bold border-2 border-white">
                         <Package className="h-3 w-3" />
+                    </div>
+                )}
+
+                {/* Stale indicator */}
+                {isStale && (
+                    <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-yellow-500 rounded-full flex items-center justify-center border border-white">
+                        <Clock className="h-2.5 w-2.5 text-white" />
                     </div>
                 )}
             </div>
@@ -79,6 +122,18 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
 
     useEffect(() => {
         const supabase = createClient()
+
+        const parseLocation = (loc: any) =>
+            loc
+                ? {
+                      lat: parseFloat(loc.lat),
+                      lng: parseFloat(loc.lng),
+                      accuracy: loc.accuracy != null ? parseFloat(loc.accuracy) : null,
+                      heading: loc.heading != null ? parseFloat(loc.heading) : null,
+                      speed: loc.speed != null ? parseFloat(loc.speed) : null,
+                      updatedAt: loc.updated_at,
+                  }
+                : undefined
 
         const fetchDrivers = async () => {
             const { data: driversData } = await supabase
@@ -103,13 +158,7 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
 
                     return {
                         ...driver,
-                        currentLocation: driver.current_location
-                            ? {
-                                  lat: driver.current_location.lat,
-                                  lng: driver.current_location.lng,
-                                  updatedAt: driver.current_location.updated_at,
-                              }
-                            : undefined,
+                        currentLocation: parseLocation(driver.current_location),
                         activeOrder: orders?.[0]
                             ? {
                                   id: orders[0].id,
@@ -145,12 +194,7 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
                                 ? {
                                       ...d,
                                       currentLocation: updatedDriver.current_location
-                                          ? {
-                                                lat: updatedDriver.current_location.lat,
-                                                lng: updatedDriver.current_location.lng,
-                                                updatedAt:
-                                                    updatedDriver.current_location.updated_at,
-                                            }
+                                          ? parseLocation(updatedDriver.current_location)
                                           : d.currentLocation,
                                       isAvailable: updatedDriver.is_available,
                                   }
@@ -200,6 +244,15 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
                 <p className="text-muted-foreground">Cargando repartidores...</p>
             </div>
         )
+    }
+
+    // Accuracy quality label
+    const getAccuracyLabel = (accuracy: number | null) => {
+        if (accuracy == null) return null
+        if (accuracy <= 10) return { text: "Excelente", color: "text-green-600" }
+        if (accuracy <= 30) return { text: "Buena", color: "text-green-500" }
+        if (accuracy <= 100) return { text: "Moderada", color: "text-yellow-500" }
+        return { text: "Baja", color: "text-red-500" }
     }
 
     return (
@@ -268,7 +321,7 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
                                 <p className="text-sm text-muted-foreground">
                                     {selectedDriver.phone}
                                 </p>
-                                <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
                                     <Badge
                                         variant={
                                             selectedDriver.isAvailable ? "default" : "secondary"
@@ -303,16 +356,35 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
                             </div>
                         )}
 
-                        {selectedDriver.currentLocation?.updatedAt && (
-                            <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                                <Clock className="h-3 w-3" />
-                                Actualizado{" "}
-                                {formatDistanceToNow(
-                                    new Date(selectedDriver.currentLocation.updatedAt),
-                                    {
-                                        addSuffix: true,
-                                        locale: es,
-                                    }
+                        {/* GPS info row */}
+                        {selectedDriver.currentLocation && (
+                            <div className="mt-3 pt-3 border-t border-border flex items-center gap-4 flex-wrap text-xs text-muted-foreground">
+                                {selectedDriver.currentLocation.updatedAt && (
+                                    <div className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {formatDistanceToNow(
+                                            new Date(selectedDriver.currentLocation.updatedAt),
+                                            { addSuffix: true, locale: es }
+                                        )}
+                                    </div>
+                                )}
+                                {selectedDriver.currentLocation.accuracy != null && (
+                                    <div className="flex items-center gap-1">
+                                        <Signal className="h-3 w-3" />
+                                        <span>±{Math.round(selectedDriver.currentLocation.accuracy)}m</span>
+                                        {(() => {
+                                            const label = getAccuracyLabel(selectedDriver.currentLocation!.accuracy)
+                                            return label ? (
+                                                <span className={label.color}>({label.text})</span>
+                                            ) : null
+                                        })()}
+                                    </div>
+                                )}
+                                {selectedDriver.currentLocation.speed != null && (
+                                    <div className="flex items-center gap-1">
+                                        <Gauge className="h-3 w-3" />
+                                        {(selectedDriver.currentLocation.speed * 3.6).toFixed(0)} km/h
+                                    </div>
                                 )}
                             </div>
                         )}

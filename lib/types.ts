@@ -137,6 +137,9 @@ export interface Driver {
   currentLocation?: {
     lat: number
     lng: number
+    accuracy: number | null
+    heading: number | null
+    speed: number | null
     updatedAt: string
   }
 }
