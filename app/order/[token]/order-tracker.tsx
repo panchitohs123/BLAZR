@@ -47,7 +47,24 @@ const statusIndex: Record<string, number> = {
 
 export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
     const [order, setOrder] = useState<Order>(initialOrder)
-    const [driverId, setDriverId] = useState<string | undefined>(initialOrder.driverId)
+    const [driverId, setDriverId] = useState<string | undefined>(initialOrder.driverId ?? undefined)
+    const [branchLocation, setBranchLocation] = useState<{ lat: number; lng: number } | null>(null)
+
+    // Fetch branch coordinates
+    useEffect(() => {
+        if (!order.branchId) return
+        const supabase = createClient()
+        supabase
+            .from("sucursales")
+            .select("lat, lng")
+            .eq("id", order.branchId)
+            .single()
+            .then(({ data }) => {
+                if (data?.lat && data?.lng) {
+                    setBranchLocation({ lat: parseFloat(data.lat), lng: parseFloat(data.lng) })
+                }
+            })
+    }, [order.branchId])
 
     useEffect(() => {
         const supabase = createClient()
@@ -73,6 +90,8 @@ export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
                         deliveredAt: row.delivered_at || prev.deliveredAt,
                         cancelledAt: row.cancelled_at || prev.cancelledAt,
                         driverId: row.driver_id || prev.driverId,
+                        addressLat: row.address_lat ? parseFloat(row.address_lat) : prev.addressLat,
+                        addressLng: row.address_lng ? parseFloat(row.address_lng) : prev.addressLng,
                     }))
                     if (row.driver_id) {
                         setDriverId(row.driver_id)
@@ -88,17 +107,18 @@ export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
 
     const currentStepIndex = statusIndex[order.status] ?? 0
     const isCancelled = order.status === "cancelled"
-    const showTracking = order.status === "ready" && order.deliveryMethod === "delivery" && driverId
 
-    // Mock destination coordinates - in production these would come from the order
-    const destination = {
-        lat: -34.6037,
-        lng: -58.3816,
-        address: order.address,
-    }
+    // Show tracking when driver assigned AND order is being delivered (ready status = driver en camino)
+    const hasCoordinates = order.addressLat != null && order.addressLng != null
+    const showTracking =
+        order.deliveryMethod === "delivery" &&
+        driverId &&
+        hasCoordinates &&
+        (order.status === "ready" || order.status === "delivering")
 
-    // Mock branch location - in production this would come from the branch
-    const branchLocation = { lat: -34.6087, lng: -58.3786 }
+    const destination = hasCoordinates
+        ? { lat: order.addressLat!, lng: order.addressLng!, address: order.address }
+        : null
 
     return (
         <GoogleMapsProvider>
@@ -187,8 +207,8 @@ export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
                         </CardContent>
                     </Card>
 
-                    {/* Live Tracking Map - Only show when order is ready and has a driver */}
-                    {showTracking && (
+                    {/* Live Tracking Map - Show when driver assigned and has coordinates */}
+                    {showTracking && destination && (
                         <Card className="rounded-2xl bg-card border-border overflow-hidden">
                             <CardContent className="p-4">
                                 <h2 className="font-semibold text-card-foreground mb-4 text-sm uppercase tracking-wide">
@@ -198,7 +218,7 @@ export function OrderTracker({ initialOrder, token }: OrderTrackerProps) {
                                     orderId={order.id}
                                     driverId={driverId}
                                     destination={destination}
-                                    branchLocation={branchLocation}
+                                    branchLocation={branchLocation ?? undefined}
                                     height="300px"
                                 />
                             </CardContent>

@@ -168,17 +168,13 @@ export default function CheckoutPage() {
         couponDiscount: couponDiscount,
         deliveryZoneId: selectedZone || undefined,
         orderType: "online",
+        addressLat: selectedLocation?.lat,
+        addressLng: selectedLocation?.lng,
       })
 
       if ("error" in result) {
         toast.error(result.error)
         return
-      }
-
-      // Update order with coordinates if available
-      if (selectedLocation && result.orderId) {
-        // This would be a separate server action to update the order coordinates
-        // For now we'll skip this optimization
       }
 
       clearCart()

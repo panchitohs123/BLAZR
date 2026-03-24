@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Package, MapPin, Phone, LogOut, Clock, Navigation, Locate, AlertCircle } from "lucide-react"
+import { Package, MapPin, Phone, LogOut, Clock, Navigation, Locate, AlertCircle, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +12,7 @@ import { updateOrderStatus } from "@/app/actions"
 import type { Order } from "@/lib/types"
 import { toast } from "sonner"
 import { useDriverLocation } from "@/hooks/use-driver-location"
-import { GoogleMapsProvider, MapView } from "@/components/maps"
+import { GoogleMapsProvider, LiveTrackingMap } from "@/components/maps"
 
 export default function DriverDashboardPage() {
     const [driverId, setDriverId] = useState<string | null>(null)
@@ -22,6 +22,7 @@ export default function DriverDashboardPage() {
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
     const [showMap, setShowMap] = useState(false)
     const [storageError, setStorageError] = useState(false)
+    const [branchLocations, setBranchLocations] = useState<Record<string, { lat: number; lng: number }>>({})
     const router = useRouter()
 
     const { isTracking, lastLocation, error, locationStatus } = useDriverLocation({
@@ -36,18 +37,16 @@ export default function DriverDashboardPage() {
     })
 
     useEffect(() => {
-        // Intentar obtener de localStorage primero, luego sessionStorage
         let id = null
         let name = null
-        
+
         try {
             id = localStorage.getItem("driverId")
             name = localStorage.getItem("driverName")
         } catch {
             // localStorage no disponible
         }
-        
-        // Fallback a sessionStorage
+
         if (!id) {
             try {
                 id = sessionStorage.getItem("driverId")
@@ -59,12 +58,12 @@ export default function DriverDashboardPage() {
                 // Ningún storage disponible
             }
         }
-        
+
         if (!id) {
             router.push("/driver")
             return
         }
-        
+
         setDriverId(id)
         setDriverName(name || "")
         loadOrders(id)
@@ -95,6 +94,26 @@ export default function DriverDashboardPage() {
             const response = await fetch(`/api/driver/orders?driverId=${id}`)
             const data = await response.json()
             setOrders(data || [])
+
+            // Fetch branch coordinates for orders that have them
+            const branchIds = [...new Set((data || []).map((o: Order) => o.branchId).filter(Boolean))]
+            if (branchIds.length > 0) {
+                const supabase = createClient()
+                const { data: branches } = await supabase
+                    .from("sucursales")
+                    .select("id, lat, lng")
+                    .in("id", branchIds)
+
+                if (branches) {
+                    const locs: Record<string, { lat: number; lng: number }> = {}
+                    for (const b of branches) {
+                        if (b.lat && b.lng) {
+                            locs[b.id] = { lat: parseFloat(b.lat), lng: parseFloat(b.lng) }
+                        }
+                    }
+                    setBranchLocations(locs)
+                }
+            }
         } catch {
             toast.error("Error cargando pedidos")
         } finally {
@@ -128,41 +147,27 @@ export default function DriverDashboardPage() {
         }
     }
 
-    const handleNavigate = (address: string) => {
-        const encodedAddress = encodeURIComponent(address)
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`, "_blank")
+    const handleNavigate = (order: Order) => {
+        // Use coordinates for precision when available, fallback to address text
+        if (order.addressLat && order.addressLng) {
+            window.open(
+                `https://www.google.com/maps/dir/?api=1&destination=${order.addressLat},${order.addressLng}`,
+                "_blank"
+            )
+        } else {
+            const encodedAddress = encodeURIComponent(order.address || "")
+            window.open(
+                `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`,
+                "_blank"
+            )
+        }
     }
 
     const activeOrders = orders.filter((o) => o.status === "ready")
     const completedOrders = orders.filter((o) => o.status === "delivered")
 
-    const getMapMarkers = () => {
-        if (!selectedOrder) return []
-        
-        const markers = []
-        
-        if (lastLocation) {
-            markers.push({
-                id: "driver",
-                lat: lastLocation.lat,
-                lng: lastLocation.lng,
-                title: "Tu ubicación",
-                icon: "driver" as const,
-                color: "#22c55e",
-            })
-        }
-        
-        markers.push({
-            id: "destination",
-            lat: -34.6037,
-            lng: -58.3816,
-            title: "Destino",
-            icon: "customer" as const,
-            color: "#ef4444",
-        })
-        
-        return markers
-    }
+    // Check if selected order has real coordinates for LiveTrackingMap
+    const selectedHasCoords = selectedOrder?.addressLat != null && selectedOrder?.addressLng != null
 
     if (loading) {
         return (
@@ -187,6 +192,12 @@ export default function DriverDashboardPage() {
                                     <Badge variant="outline" className="text-xs bg-green-50 text-green-600 border-green-200">
                                         <Locate className="h-3 w-3 mr-1" />
                                         GPS activo
+                                    </Badge>
+                                )}
+                                {locationStatus === "fallback" && (
+                                    <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-600 border-yellow-200">
+                                        <Wifi className="h-3 w-3 mr-1" />
+                                        Ubicación aprox.
                                     </Badge>
                                 )}
                                 {locationStatus === "requesting" && (
@@ -234,6 +245,7 @@ export default function DriverDashboardPage() {
                         </Card>
                     )}
 
+                    {/* Map with route — uses LiveTrackingMap when coordinates available */}
                     {showMap && selectedOrder && (
                         <Card className="rounded-2xl overflow-hidden">
                             <CardContent className="p-0">
@@ -248,17 +260,32 @@ export default function DriverDashboardPage() {
                                         Cerrar
                                     </Button>
                                 </div>
-                                <MapView
-                                    markers={getMapMarkers()}
-                                    center={lastLocation ? { lat: lastLocation.lat, lng: lastLocation.lng } : undefined}
-                                    zoom={14}
-                                    height="300px"
-                                />
+
+                                {selectedHasCoords ? (
+                                    <LiveTrackingMap
+                                        orderId={selectedOrder.id}
+                                        driverId={driverId ?? undefined}
+                                        destination={{
+                                            lat: selectedOrder.addressLat!,
+                                            lng: selectedOrder.addressLng!,
+                                            address: selectedOrder.address,
+                                        }}
+                                        branchLocation={branchLocations[selectedOrder.branchId]}
+                                        height="300px"
+                                    />
+                                ) : (
+                                    <div className="h-[200px] bg-muted flex items-center justify-center">
+                                        <p className="text-sm text-muted-foreground">
+                                            Sin coordenadas — usa el botón Navegar
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="p-4 flex gap-2">
                                     <Button
                                         variant="outline"
                                         className="flex-1 rounded-xl"
-                                        onClick={() => handleNavigate(selectedOrder.address || "")}
+                                        onClick={() => handleNavigate(selectedOrder)}
                                     >
                                         <Navigation className="h-4 w-4 mr-2" />
                                         Navegar
@@ -278,7 +305,7 @@ export default function DriverDashboardPage() {
                         <h2 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
                             Entregas Activas
                         </h2>
-                        
+
                         {activeOrders.length === 0 ? (
                             <Card className="rounded-2xl border-dashed border-2">
                                 <CardContent className="py-8 text-center">
@@ -339,7 +366,7 @@ export default function DriverDashboardPage() {
                                                     }}
                                                 >
                                                     <MapPin className="h-4 w-4 mr-2" />
-                                                    Mapa
+                                                    Ruta
                                                 </Button>
                                                 <Button
                                                     className="flex-1 rounded-xl"

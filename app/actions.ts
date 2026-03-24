@@ -24,6 +24,8 @@ export async function createOrder(formData: {
     deliveryZoneId?: string
     orderType?: "online" | "pos" | "phone"
     createdBy?: string
+    addressLat?: number
+    addressLng?: number
 }) {
     const supabase = await createClient()
 
@@ -49,6 +51,8 @@ export async function createOrder(formData: {
             delivery_zone_id: formData.deliveryZoneId || null,
             order_type: formData.orderType || "online",
             created_by: formData.createdBy || user?.id || null,
+            address_lat: formData.addressLat || null,
+            address_lng: formData.addressLng || null,
         })
         .select("id, public_tracking_token, order_number")
         .single()

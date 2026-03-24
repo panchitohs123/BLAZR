@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
             status: row.status,
             createdAt: row.created_at,
             branchId: row.sucursal_id || "",
+            addressLat: row.address_lat ? parseFloat(row.address_lat) : null,
+            addressLng: row.address_lng ? parseFloat(row.address_lng) : null,
         }))
 
         return NextResponse.json(mappedOrders)

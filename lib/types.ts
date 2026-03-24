@@ -77,6 +77,9 @@ export interface Order {
   deliveredAt?: string
   cancelledAt?: string
   branchId: string
+  addressLat?: number | null
+  addressLng?: number | null
+  driverId?: string | null
 }
 
 export interface Branch {

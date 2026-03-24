@@ -194,6 +194,9 @@ function mapOrder(row: any, items: CartItem[]): Order {
         deliveredAt: row.delivered_at,
         cancelledAt: row.cancelled_at,
         branchId: row.sucursal_id || "",
+        addressLat: row.address_lat != null ? parseFloat(row.address_lat) : null,
+        addressLng: row.address_lng != null ? parseFloat(row.address_lng) : null,
+        driverId: row.driver_id || null,
     }
 }
 
