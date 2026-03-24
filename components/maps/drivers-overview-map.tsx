@@ -44,6 +44,8 @@ function TraditionalMarker({
     const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
 
     useEffect(() => {
+        if (!google.maps.marker?.AdvancedMarkerElement) return
+
         const container = document.createElement("div")
         container.style.position = "relative"
         container.style.display = "flex"
@@ -267,6 +269,8 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
               }
             : defaultCenter
 
+    const mapsAvailable = typeof google !== "undefined" && !!google.maps
+
     if (loading) {
         return (
             <div
@@ -325,7 +329,7 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
                         mapId={process.env.NEXT_PUBLIC_GOOGLE_MAPS_ID || undefined}
                     >
                         {/* Markers with Map ID */}
-                        {hasMapId &&
+                        {mapsAvailable && hasMapId &&
                             driversWithLocation.map((driver) => (
                                 <AdvancedMarker
                                     key={driver.id}
@@ -365,7 +369,7 @@ export function DriversOverviewMap({ height = "500px" }: DriversOverviewMapProps
                             ))}
 
                         {/* Markers without Map ID */}
-                        {!hasMapId &&
+                        {mapsAvailable && !hasMapId &&
                             map &&
                             driversWithLocation.map((driver) => (
                                 <TraditionalMarker
