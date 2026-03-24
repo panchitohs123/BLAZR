@@ -13,7 +13,7 @@ interface UseDriverLocationOptions {
 export function useDriverLocation({
     driverId,
     enabled = true,
-    interval = 10000, // 10 seconds default
+    interval = 10000,
     onError,
 }: UseDriverLocationOptions) {
     const [isTracking, setIsTracking] = useState(false)
@@ -24,18 +24,25 @@ export function useDriverLocation({
     } | null>(null)
     const [error, setError] = useState<GeolocationPositionError | null>(null)
     const [locationStatus, setLocationStatus] = useState<"idle" | "requesting" | "active" | "error">("idle")
-    
+
+    // Refs to avoid stale closures in geolocation callbacks
+    const driverIdRef = useRef(driverId)
+    const onErrorRef = useRef(onError)
     const intervalRef = useRef<NodeJS.Timeout | null>(null)
     const watchIdRef = useRef<number | null>(null)
 
+    useEffect(() => { driverIdRef.current = driverId }, [driverId])
+    useEffect(() => { onErrorRef.current = onError }, [onError])
+
     const sendLocation = useCallback(
         async (position: GeolocationPosition) => {
-            if (!driverId) return
+            const id = driverIdRef.current
+            if (!id) return
 
-            const { latitude, longitude, accuracy } = position.coords
+            const { latitude, longitude } = position.coords
 
             try {
-                const result = await updateDriverLocation(driverId, latitude, longitude)
+                const result = await updateDriverLocation(id, latitude, longitude)
 
                 if (result.error) {
                     console.error("Error updating location in DB:", result.error)
@@ -54,66 +61,17 @@ export function useDriverLocation({
                 setLocationStatus("error")
             }
         },
-        [driverId]
+        [] // no dependencies — reads from refs
     )
 
     const handleError = useCallback(
         (err: GeolocationPositionError) => {
             setError(err)
             setLocationStatus("error")
-            onError?.(err)
-            
-            switch (err.code) {
-                case err.PERMISSION_DENIED:
-                    console.error("Location permission denied")
-                    break
-                case err.POSITION_UNAVAILABLE:
-                    console.error("Location unavailable")
-                    break
-                case err.TIMEOUT:
-                    console.error("Location timeout")
-                    break
-            }
+            onErrorRef.current?.(err)
         },
-        [onError]
+        []
     )
-
-    const startTracking = useCallback(() => {
-        if (!navigator.geolocation || !driverId) {
-            console.error("Geolocation not supported or no driver ID")
-            return
-        }
-
-        setIsTracking(true)
-        setLocationStatus("requesting")
-
-        // Get initial position
-        navigator.geolocation.getCurrentPosition(sendLocation, handleError, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
-        })
-
-        // Start watching position for continuous updates
-        watchIdRef.current = navigator.geolocation.watchPosition(
-            sendLocation,
-            handleError,
-            {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 5000,
-            }
-        )
-
-        // Backup interval to ensure updates even if watchPosition is slow
-        intervalRef.current = setInterval(() => {
-            navigator.geolocation.getCurrentPosition(sendLocation, handleError, {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 5000,
-            })
-        }, interval)
-    }, [driverId, interval, sendLocation, handleError])
 
     const stopTracking = useCallback(() => {
         setIsTracking(false)
@@ -130,23 +88,50 @@ export function useDriverLocation({
     }, [])
 
     useEffect(() => {
-        if (enabled && driverId) {
-            startTracking()
-        } else {
+        if (!enabled || !driverId || !navigator.geolocation) {
             stopTracking()
+            return
         }
+
+        setIsTracking(true)
+        setLocationStatus("requesting")
+
+        const geoOptions: PositionOptions = {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0,
+        }
+
+        // Get initial position
+        navigator.geolocation.getCurrentPosition(sendLocation, handleError, geoOptions)
+
+        // Watch for continuous updates
+        watchIdRef.current = navigator.geolocation.watchPosition(
+            sendLocation,
+            handleError,
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+        )
+
+        // Backup interval
+        intervalRef.current = setInterval(() => {
+            navigator.geolocation.getCurrentPosition(sendLocation, handleError, {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 5000,
+            })
+        }, interval)
 
         return () => {
             stopTracking()
         }
-    }, [enabled, driverId, startTracking, stopTracking])
+    }, [enabled, driverId, interval, sendLocation, handleError, stopTracking])
 
     return {
         isTracking,
         lastLocation,
         error,
         locationStatus,
-        startTracking,
+        startTracking: () => {}, // kept for API compat
         stopTracking,
     }
 }
