@@ -39,6 +39,15 @@ export async function GET(request: NextRequest) {
             case "kitchen-orders":
                 // Orders for kitchen display: new, accepted, preparing, ready
                 return NextResponse.json(await getOrdersByStatus(["new", "accepted", "preparing", "ready"]))
+            case "dispatch": {
+                // All data needed for the dispatch view
+                const [dispatchOrders, zones, availableDrivers] = await Promise.all([
+                    getOrders(),
+                    getAllDeliveryZones(),
+                    getDrivers(),
+                ])
+                return NextResponse.json({ orders: dispatchOrders, zones, drivers: availableDrivers })
+            }
             default:
                 return NextResponse.json({ error: "Invalid type" }, { status: 400 })
         }

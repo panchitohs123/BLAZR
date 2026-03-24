@@ -51,7 +51,7 @@ export interface CartItem {
 
 export type OrderStatus = "new" | "accepted" | "preparing" | "ready" | "delivered" | "cancelled"
 
-export type DeliveryMethod = "delivery" | "pickup"
+export type DeliveryMethod = "delivery" | "pickup" | "dine_in"
 
 export type PaymentMethod = "mercadopago" | "cash"
 
@@ -80,6 +80,7 @@ export interface Order {
   addressLat?: number | null
   addressLng?: number | null
   driverId?: string | null
+  deliveryZoneId?: string | null
 }
 
 export interface Branch {

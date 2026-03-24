@@ -121,7 +121,25 @@ export async function updateOrderStatus(
     return { success: true }
 }
 
-export async function assignDriver(orderId: string, driverId: string) {
+export async function assignDriver(orderId: string, driverId: string | null) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from("orders")
+        .update({
+            driver_id: driverId,
+            driver_assigned_at: driverId ? new Date().toISOString() : null,
+        })
+        .eq("id", orderId)
+
+    if (error) return { error: error.message }
+
+    revalidatePath("/admin/orders")
+    revalidatePath("/driver/dashboard")
+    return { success: true }
+}
+
+export async function assignDriverBatch(orderIds: string[], driverId: string) {
     const supabase = await createClient()
 
     const { error } = await supabase
@@ -129,9 +147,8 @@ export async function assignDriver(orderId: string, driverId: string) {
         .update({
             driver_id: driverId,
             driver_assigned_at: new Date().toISOString(),
-            status: "ready"
         })
-        .eq("id", orderId)
+        .in("id", orderIds)
 
     if (error) return { error: error.message }
 

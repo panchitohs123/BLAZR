@@ -18,6 +18,7 @@ import {
   Bike,
   Sparkles,
   Map as MapIcon,
+  PackageCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -31,6 +32,7 @@ const navItems = [
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
   { href: "/admin/kitchen", label: "Kitchen", icon: ChefHat },
   { href: "/admin/pos", label: "POS / Mostrador", icon: ShoppingBag },
+  { href: "/admin/dispatch", label: "Dispatch", icon: PackageCheck },
   { href: "/admin/live-tracking", label: "Live Tracking", icon: MapIcon },
 ]
 
