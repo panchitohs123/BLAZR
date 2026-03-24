@@ -800,7 +800,7 @@ export async function deleteDriver(id: string) {
 }
 
 export async function updateDriverLocation(driverId: string, lat: number, lng: number) {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     const { error } = await supabase
         .from("drivers")
