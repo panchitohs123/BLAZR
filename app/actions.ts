@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import type { CartItem } from "@/lib/types"
 
@@ -701,6 +702,31 @@ export async function deleteDeliveryZone(id: string) {
 
     revalidatePath("/admin/delivery-zones")
     return { success: true }
+}
+
+// ─── Driver Login (bypasses RLS for unauthenticated drivers) ──
+
+export async function driverLogin(phone: string) {
+    const normalizedPhone = phone.replace(/\D/g, "")
+
+    if (!normalizedPhone) {
+        return { error: "Ingresa tu número de teléfono" }
+    }
+
+    const supabase = createAdminClient()
+
+    const { data: driver, error } = await supabase
+        .from("drivers")
+        .select("id, name")
+        .eq("phone", normalizedPhone)
+        .eq("is_active", true)
+        .single()
+
+    if (error || !driver) {
+        return { error: "Número no registrado o inactivo" }
+    }
+
+    return { driver: { id: driver.id, name: driver.name } }
 }
 
 // ─── Drivers ───────────────────────────────────────────────────

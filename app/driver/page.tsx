@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
+import { driverLogin } from "@/app/actions"
 import { toast } from "sonner"
 
 export default function DriverLoginPage() {
@@ -45,23 +45,15 @@ export default function DriverLoginPage() {
         setLoading(true)
 
         try {
-            const supabase = createClient()
+            const result = await driverLogin(phone)
 
-            // Normalizar: remover todo excepto dígitos
-            const normalizedPhone = phone.replace(/\D/g, "")
-
-            const { data: driver, error } = await supabase
-                .from("drivers")
-                .select("*")
-                .eq("phone", normalizedPhone)
-                .eq("is_active", true)
-                .single()
-
-            if (error || !driver) {
-                toast.error("Número no registrado o inactivo")
+            if (result.error || !result.driver) {
+                toast.error(result.error || "Número no registrado o inactivo")
                 setLoading(false)
                 return
             }
+
+            const driver = result.driver
 
             // Guardar en storage con manejo de errores
             let useSessionStorage = false
