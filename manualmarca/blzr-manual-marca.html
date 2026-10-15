@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLZR · Manual de Marca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@900&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: consola de sistema. Barra de estado arriba, índice fijo a la izquierda, columna de 1040px.
+   Cada sección abre con una cabecera técnica (ruta, índice, regla con marcas) y se arma con paneles de especificación. */
+:root{
+  color-scheme:dark;
+  --c950:#0B0807; --c900:#110D0B; --c850:#15100E; --c800:#1A1411; --c700:#241C18; --c600:#342923; --c400:#7C7068; --c300:#B8ACA2;
+  --hueso:#F6F0E7;
+  --brasa:#FF3B14; --brasa-prof:#D42A0A; --ambar:#FF8A3D; --nucleo:#FFE9D6; --rescoldo:#C81E08;
+  --mostaza:#FFC21A; --mostaza-prof:#9A6A00;
+  --azul:#2F4BFF; --azul-claro:#7C9BFF;
+  --grad:radial-gradient(circle at 50% 58%,#FFE9D6 0%,#FF8A3D 32%,#FF3B14 68%,#C81E08 100%);
+  --bg:var(--c950); --surface:var(--c900); --surface-2:var(--c800); --surface-3:var(--c700);
+  --fg:var(--hueso); --fg-2:var(--c300); --fg-3:var(--c400);
+  --line:rgba(246,240,231,.08); --line-2:rgba(246,240,231,.15);
+  --accent-text:#FF6A45; --mostaza-text:var(--mostaza); --azul-text:var(--azul-claro);
+  --grid:rgba(246,240,231,.05); --stage:#0B0807;
+  --f-brand:"Rubik","Arial Black",sans-serif;
+  --f-ui:"Geist",system-ui,-apple-system,sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,Menlo,monospace;
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#F2EEE8; --surface:#FAF7F3; --surface-2:#EAE4DB; --surface-3:#DFD8CD;
+  --fg:#110D0B; --fg-2:#54483F; --fg-3:#857970;
+  --line:rgba(17,13,11,.09); --line-2:rgba(17,13,11,.17);
+  --accent-text:#D42A0A; --mostaza-text:#8A5E00; --azul-text:#2F4BFF;
+  --grid:rgba(17,13,11,.06); --stage:#E6DFD5;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.02em}
+p{margin:0;color:var(--fg-2);max-width:66ch}
+p strong{color:var(--fg);font-weight:600}
+.mono{font-family:var(--f-mono)}
+svg{overflow:visible}
+:focus-visible{outline:2px solid var(--brasa);outline-offset:3px;border-radius:4px}
+
+.status{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:18px;height:38px;padding-inline:20px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line);font:400 11.5px/1 var(--f-mono);color:var(--fg-3);white-space:nowrap;overflow:hidden}
+.status .live{display:inline-flex;align-items:center;gap:8px;color:var(--fg-2)}
+.status .live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brasa);box-shadow:0 0 8px var(--brasa)}
+.status .sp{margin-left:auto}
+.status button{font:500 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg);background:var(--surface-2);border:1px solid var(--line-2);border-radius:999px;padding:6px 12px;cursor:pointer}
+@media(max-width:700px){.status .hide-s{display:none}}
+
+.shell{display:flex}
+nav.toc{width:236px;flex:none;position:sticky;top:38px;height:calc(100vh - 38px);overflow-y:auto;border-right:1px solid var(--line);padding:26px 18px}
+.toc a{display:grid;grid-template-columns:26px 1fr;align-items:baseline;padding:7px 10px;border-radius:8px;color:var(--fg-2);text-decoration:none;font-size:14px}
+.toc a i{font:400 11px/1 var(--f-mono);font-style:normal;color:var(--fg-3)}
+.toc a:hover{background:var(--surface-2);color:var(--fg)}
+.toc .grp{font:500 10.5px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-3);margin:20px 10px 8px}
+.toc .grp:first-child{margin-top:0}
+main{flex:1;min-width:0;padding-inline:20px}
+.wrap{max-width:1040px;margin:0 auto;padding-block:0 96px}
+@media(max-width:980px){nav.toc{display:none}}
+
+.label{display:inline-flex;align-items:center;gap:10px;font:500 11.5px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-3)}
+.label b{color:var(--accent-text);font-weight:500}
+.label.dot::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--brasa);box-shadow:0 0 10px 2px rgba(255,59,20,.55)}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.g6{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+@media(max-width:860px){.g2,.g3{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g6{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.panel p{font-size:14.5px}
+.k{font:500 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3)}
+.gridbg{background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+.stage{background-color:var(--stage)}
+.rule{border-left:2px solid var(--brasa);padding:12px 16px;background:var(--surface);font-size:14.5px;color:var(--fg-2)}
+.rule b{display:block;font:500 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text);margin-bottom:8px}
+.rule.m{border-color:var(--mostaza)} .rule.m b{color:var(--mostaza-text)}
+.cap{font:400 11.5px/1.5 var(--f-mono);color:var(--fg-3)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;min-width:600px;font-size:14px}
+th{font:500 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--fg-3);text-align:left;padding:13px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+td{padding:13px 16px;border-bottom:1px solid var(--line);color:var(--fg-2);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td:first-child{color:var(--fg);font-weight:500}
+td.m{font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+
+section.sec{padding-block:88px;display:flex;flex-direction:column;gap:26px}
+.sh{display:flex;flex-direction:column;gap:18px}
+.sh .path{display:flex;justify-content:space-between;gap:12px;font:400 11.5px/1 var(--f-mono);color:var(--fg-3);padding-bottom:12px;border-bottom:1px solid var(--line);position:relative}
+.sh .path::after{content:"";position:absolute;left:0;right:0;bottom:-7px;height:6px;background:repeating-linear-gradient(90deg,var(--line-2) 0 1px,transparent 1px 24px)}
+.sh .path b{color:var(--accent-text);font-weight:400}
+.sh .row{display:grid;grid-template-columns:96px minmax(0,1fr);gap:20px;align-items:start;margin-top:10px}
+.sh .num{font:500 52px/1 var(--f-mono);letter-spacing:-.06em;color:var(--fg-3)}
+.sh h2{font-size:clamp(34px,5vw,58px);line-height:1;letter-spacing:-.04em}
+.sh p{font-size:18px;margin-top:14px}
+@media(max-width:700px){.sh .row{grid-template-columns:1fr}.sh .num{font-size:28px}}
+h3{font-size:22px;letter-spacing:-.02em;margin-top:26px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h3 small{font:400 11.5px/1 var(--f-mono);color:var(--fg-3);letter-spacing:.04em}
+
+.tile{border-radius:22.5%;background:radial-gradient(circle at 50% 45%,#2C1B14,#0E0A09 72%);box-shadow:inset 0 0 0 1px rgba(246,240,231,.09);display:grid;place-items:center}
+.tile svg{width:100%;height:100%}
+
+.cover{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;padding-block:72px 56px}
+.cover .meta{display:flex;flex-direction:column;gap:28px;min-width:0}
+.big-lock{display:inline-flex;align-items:center;gap:.2em;font-family:var(--f-brand);font-weight:900;font-size:clamp(64px,10vw,140px);letter-spacing:-.025em;line-height:1}
+.big-lock .w{line-height:.74;display:block}
+.big-lock .t{width:.98em;height:.98em;flex:none}
+.cover .lead{font-size:clamp(19px,2.2vw,24px);color:var(--fg-2);max-width:30ch;letter-spacing:-.015em;line-height:1.35}
+.specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.specs div{padding:12px 14px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:6px;min-width:0}
+.specs div:last-child{border-right:0}
+.specs span{font:400 10.5px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3)}
+.specs b{font-size:14px;font-weight:500}
+.cover .art{position:relative;aspect-ratio:1;max-width:100%;border:1px solid var(--line);border-radius:20px;overflow:hidden}
+.cover .art .halo{position:absolute;inset:18%;border-radius:50%;background:var(--grad);filter:blur(60px);opacity:.45}
+.cover .art svg.main{position:absolute;inset:0;width:100%;height:100%}
+.xh{position:absolute;font:400 10.5px/1 var(--f-mono);color:var(--fg-3)}
+@media(max-width:860px){.cover{grid-template-columns:1fr}.cover .art{max-width:440px}}
+.ticker{border-block:1px solid var(--line);overflow:hidden;white-space:nowrap;font:400 12.5px/1 var(--f-mono);color:var(--fg-2);padding-block:12px}
+.ticker .in{display:inline-flex;gap:40px;padding-left:40px}
+.ticker .in b{font-weight:500;color:var(--fg)}
+.ticker .in i{font-style:normal}
+.t-new{color:var(--accent-text)} .t-prep{color:var(--mostaza-text)} .t-ok{color:var(--azul-text)}
+@media (prefers-reduced-motion:no-preference){.ticker .in{animation:tick 40s linear infinite}}
+@keyframes tick{to{transform:translateX(-50%)}}
+.index{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:40px}
+.index a{display:flex;flex-direction:column;gap:22px;padding:14px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--fg);background:var(--surface);min-width:0}
+.index a:hover{border-color:var(--line-2)}
+.index i{font:400 11px/1 var(--f-mono);font-style:normal;color:var(--fg-3)}
+.index span{font-size:14px;font-weight:500}
+@media(max-width:860px){.index{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.vals{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.vals div{padding:20px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.vals div:last-child{border-right:0}
+.vals i{font:400 11px/1 var(--f-mono);font-style:normal;color:var(--accent-text)}
+.vals h4{font-size:17px}
+.vals p{font-size:14px}
+@media(max-width:860px){.vals{grid-template-columns:1fr 1fr}.vals div:nth-child(2){border-right:0}.vals div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+.voice{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.say{border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.say .t{font:500 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase}
+.say.si .t{color:var(--azul-text)} .say.no .t{color:var(--accent-text)}
+.say q{quotes:none;font-size:16.5px;color:var(--fg);font-weight:500;letter-spacing:-.01em}
+.say.no q{color:var(--fg-3);text-decoration:line-through;text-decoration-color:rgba(255,59,20,.5)}
+@media(max-width:700px){.voice{grid-template-columns:1fr}}
+
+.construct{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px}
+.cons-box{border:1px solid var(--line);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.cons-box svg{width:100%;height:auto;display:block}
+.dims{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.dims div{display:grid;grid-template-columns:86px 1fr;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);font-size:14px;color:var(--fg-2)}
+.dims div:last-child{border-bottom:0}
+.dims b{font:500 12.5px/1.5 var(--f-mono);color:var(--mostaza-text)}
+@media(max-width:860px){.construct{grid-template-columns:1fr}}
+.vers .v{border-radius:14px;aspect-ratio:1;display:grid;place-items:center;border:1px solid var(--line);position:relative;overflow:hidden}
+.vers .v svg{width:46%;height:46%}
+.vers .v small{position:absolute;left:12px;bottom:10px;font:400 10.5px/1 var(--f-mono);letter-spacing:.04em;opacity:.8}
+.icons-row{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-end;padding:24px;border-radius:16px;border:1px solid var(--line)}
+.icons-row > div{display:flex;flex-direction:column;align-items:center;gap:10px}
+.fav-tab{display:inline-flex;align-items:center;gap:8px;padding:8px 14px 8px 12px;border-radius:10px 10px 0 0;background:var(--surface-2);font-size:12.5px;color:var(--fg-2)}
+.motion-box{border:1px solid var(--line);border-radius:16px;display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;align-items:center;padding:22px;background:var(--surface)}
+.motion-box .tile{width:200px;height:200px;max-width:100%}
+.ignite{transform-origin:12px 16px;transform-box:view-box}
+.ignite.play{animation:ignite 1.4s cubic-bezier(.32,.72,0,1) both}
+@keyframes ignite{0%{opacity:0;transform:scale(.6) translateY(1px);filter:brightness(.4)}45%{opacity:1;filter:brightness(1.5)}70%{transform:scale(1.04)}100%{transform:none;filter:none}}
+.steps{display:flex;flex-direction:column;gap:8px}
+.steps div{display:grid;grid-template-columns:76px 1fr;gap:12px;font-size:14px;color:var(--fg-2)}
+.steps b{font:500 12px/1.6 var(--f-mono);color:var(--mostaza-text)}
+.btn-mini{align-self:flex-start;font:500 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg);background:var(--surface-2);border:1px solid var(--line-2);border-radius:999px;padding:9px 14px;cursor:pointer}
+@media(max-width:700px){.motion-box{grid-template-columns:1fr}}
+.misuse figure{margin:0;display:flex;flex-direction:column;gap:8px}
+.misuse .v{aspect-ratio:1;border-radius:14px;display:grid;place-items:center;position:relative;background:#0E0A09;border:1px solid var(--line)}
+.misuse .v svg{width:46%;height:46%}
+.misuse .x{position:absolute;right:10px;top:10px;font:500 10.5px/1 var(--f-mono);color:#FF6A45;border:1px solid rgba(255,59,20,.5);border-radius:999px;padding:5px 8px}
+.misuse figcaption{font-size:13.5px;color:var(--fg-2)}
+
+.lock{display:inline-flex;align-items:center;gap:.24em;font-family:var(--f-brand);font-weight:900;letter-spacing:-.025em;line-height:1;color:inherit}
+.lock .w{line-height:.74;display:block}
+.lock .i{height:.86em;width:auto;flex:none}
+.lock .t{width:1.02em;height:1.02em;flex:none}
+.lock.stack{flex-direction:column;gap:.22em}
+.lk{border-radius:16px;border:1px solid var(--line);min-height:210px;display:grid;place-items:center;padding:40px 24px;position:relative;overflow:hidden}
+.lk small{position:absolute;left:14px;top:12px;font:400 10.5px/1 var(--f-mono);letter-spacing:.04em;opacity:.7}
+.lk.d{background:#0B0807;color:#F6F0E7}
+.lk.l{background:#F6F0E7;color:#110D0B}
+.lk.b{background:#FF3B14;color:#F6F0E7}
+.lk.m{background:#FFC21A;color:#110D0B}
+.lk.a{background:#2F4BFF;color:#F6F0E7}
+.lk.span2{grid-column:1/-1;min-height:260px}
+.lk-build{border:1px solid var(--line);border-radius:16px;padding:28px 20px;overflow-x:auto}
+.lk-build svg{min-width:560px;width:100%;max-width:820px;height:auto;display:block;margin:0 auto}
+
+.core{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px}
+.sw{border-radius:16px;padding:18px;min-height:210px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);min-width:0}
+.sw h4{font-size:22px;letter-spacing:-.02em}
+.sw .d{font:400 12px/1.7 var(--f-mono)}
+.sw .role{font:500 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;opacity:.75}
+.sec2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:860px){.core,.sec2{grid-template-columns:1fr}}
+.ramp{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.ramp div{padding:12px;min-height:84px;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;font:400 10.5px/1.3 var(--f-mono)}
+.ramp b{font-family:var(--f-ui);font-weight:600;font-size:12.5px}
+@media(max-width:700px){.ramp{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.ramp-lbl{display:flex;justify-content:space-between;font:400 11px/1 var(--f-mono);color:var(--fg-3);margin-bottom:-14px}
+.ratio{display:flex;height:48px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.ratio div{display:flex;align-items:center;padding-left:10px;font:500 11px/1 var(--f-mono);white-space:nowrap;overflow:hidden}
+.pairs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pair{border-radius:12px;aspect-ratio:1.25;padding:14px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);position:relative}
+.pair b{font:900 34px/1 var(--f-brand);letter-spacing:-.02em}
+.pair span{font:400 10.5px/1.4 var(--f-mono)}
+.pair.no::after{content:"No";position:absolute;right:10px;top:10px;font:500 10.5px/1 var(--f-mono);color:#fff;background:#110D0B;border-radius:999px;padding:5px 8px}
+@media(max-width:860px){.pairs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dv{display:flex;align-items:flex-end;gap:10px;height:170px;padding:30px 18px 0;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.dv div{flex:1;border-radius:6px 6px 0 0;position:relative}
+.dv div span{position:absolute;top:-20px;left:0;right:0;text-align:center;font:400 11px/1 var(--f-mono);color:var(--fg-2)}
+
+.tcard{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column;min-width:0}
+.tcard .big{padding:26px 24px 16px;color:var(--fg);overflow:hidden}
+.tcard .chars{padding:0 24px 18px;font-size:22px;color:var(--fg-2);letter-spacing:.02em;word-break:break-all}
+.tcard .meta{display:flex;flex-wrap:wrap;gap:6px 20px;padding:12px 24px;border-top:1px solid var(--line);font:400 11.5px/1.5 var(--f-mono);color:var(--fg-3);margin-top:auto}
+.tcard .meta b{color:var(--fg);font-weight:500}
+.scale .r{display:grid;grid-template-columns:96px minmax(0,1fr) 200px;gap:16px;align-items:baseline;padding:15px 0;border-bottom:1px solid var(--line)}
+.scale .r:last-child{border-bottom:0}
+.scale .tag{font:500 11px/1 var(--f-mono);color:var(--fg-3);letter-spacing:.06em;text-transform:uppercase}
+.scale .spec{font:400 11.5px/1.4 var(--f-mono);color:var(--fg-3);text-align:right}
+.scale .s{color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:700px){.scale .r{grid-template-columns:1fr}.scale .spec{text-align:left}}
+.fmt{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.fmt div{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.fmt b{font:500 20px/1 var(--f-mono);letter-spacing:-.02em}
+.fmt span{font-size:13px;color:var(--fg-2)}
+@media(max-width:860px){.fmt{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.layouts{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.lay{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface);display:flex;flex-direction:column;gap:10px;min-width:0}
+.cols{display:grid;gap:8px;height:120px;padding:10px;border-radius:8px;background:var(--surface-2)}
+.cols i{background:rgba(255,59,20,.14);border-inline:1px solid rgba(255,59,20,.4)}
+@media(max-width:860px){.layouts{grid-template-columns:1fr}}
+.space-bars{display:flex;flex-direction:column;gap:7px}
+.space-bars div{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:12px;font:400 11.5px/1 var(--f-mono);color:var(--fg-3)}
+.space-bars i{display:block;height:10px;background:var(--brasa);border-radius:2px}
+.radii{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.radii div{aspect-ratio:1.1;border:1.5px solid var(--line-2);display:flex;align-items:flex-end;padding:10px;font:400 11px/1.3 var(--f-mono);color:var(--fg-2);background:var(--surface)}
+@media(max-width:700px){.radii{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.elev{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.elev div{border-radius:14px;padding:18px;min-height:130px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;font-size:14px;font-weight:500}
+.elev small{font:400 11px/1.4 var(--f-mono);color:var(--fg-3);font-weight:400}
+.e0{border:1px solid var(--line-2)}
+.e1{background:var(--surface-2)}
+.e2{background:var(--surface-3);box-shadow:inset 0 1px 0 rgba(246,240,231,.06)}
+.e3{background:var(--surface-2);box-shadow:0 0 0 1px rgba(255,59,20,.55),0 0 36px -6px rgba(255,59,20,.5)}
+@media(max-width:860px){.elev{grid-template-columns:1fr 1fr}}
+
+.kit{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.el{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column;min-width:0}
+.el .demo{height:200px;position:relative;overflow:hidden;background:#0B0807;color:#F6F0E7}
+.el .txt{padding:14px 16px 16px;display:flex;flex-direction:column;gap:5px}
+.el .txt b{font-size:15px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.el .txt b i{font:400 10.5px/1.6 var(--f-mono);font-style:normal;color:var(--fg-3)}
+.el .txt span{font-size:13.5px;color:var(--fg-2)}
+@media(max-width:860px){.kit{grid-template-columns:1fr}}
+.d-halo .o{position:absolute;width:170px;height:170px;left:50%;top:50%;transform:translate(-50%,-50%);border-radius:50%;background:var(--grad);filter:blur(34px);opacity:.85}
+.d-grid{background-image:linear-gradient(rgba(246,240,231,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(246,240,231,.07) 1px,transparent 1px);background-size:20px 20px}
+.d-grid::after{content:"";position:absolute;left:40px;top:40px;width:120px;height:80px;border:1px solid #FF3B14;box-shadow:0 0 18px rgba(255,59,20,.35)}
+.d-dots{background-image:radial-gradient(rgba(246,240,231,.22) 1px,transparent 1.2px);background-size:14px 14px;-webkit-mask:radial-gradient(circle at 70% 40%,#000 0,transparent 75%);mask:radial-gradient(circle at 70% 40%,#000 0,transparent 75%)}
+.d-data{display:flex;flex-direction:column;justify-content:center;gap:9px;padding:18px 20px;font:400 12.5px/1 var(--f-mono);color:#B8ACA2}
+.d-data div{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(246,240,231,.12);padding-bottom:9px}
+.d-data b{color:#F6F0E7;font-weight:500}
+.d-num{display:flex;flex-direction:column;justify-content:center;padding:20px}
+.d-num b{font:500 76px/1 var(--f-mono);letter-spacing:-.05em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;align-self:flex-start}
+.d-num span{font:400 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:#7C7068;margin-top:8px}
+.d-chips{display:flex;flex-wrap:wrap;align-content:center;gap:8px;padding:20px}
+.d-field{display:grid;grid-template-columns:1.2fr 1fr;grid-template-rows:1fr 1fr}
+.d-field div{display:flex;align-items:flex-end;padding:10px;font:500 10.5px/1 var(--f-mono)}
+.d-pattern{display:grid;grid-template-columns:repeat(8,1fr);place-items:center;padding:12px;gap:4px}
+.d-pattern svg{width:22px;height:22px}
+.d-ticket{display:grid;place-items:center}
+.tk{width:200px;background:#F6F0E7;color:#110D0B;font:400 11.5px/1.6 var(--f-mono);padding:14px 14px 18px;--z:7px;-webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/calc(2*var(--z)) 100%;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/calc(2*var(--z)) 100%}
+.tk .h{display:flex;justify-content:space-between;font-weight:500;border-bottom:1px dashed rgba(17,13,11,.3);padding-bottom:6px;margin-bottom:6px}
+.tk .r{display:flex;justify-content:space-between}
+.tk .t{border-top:1px dashed rgba(17,13,11,.3);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;font-weight:500}
+.photo{position:absolute;inset:0;background:radial-gradient(60% 60% at 62% 58%,#7A2C12 0%,#3A1609 40%,#120A07 80%)}
+.photo::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,138,61,.25) 60%,transparent 75%)}
+.ph-label{position:absolute;left:12px;bottom:10px;font:400 10.5px/1.4 var(--f-mono);color:rgba(246,240,231,.7)}
+.crosshair{position:absolute;width:18px;height:18px}
+.crosshair::before,.crosshair::after{content:"";position:absolute;background:rgba(246,240,231,.7)}
+.crosshair::before{left:8px;top:0;width:1px;height:18px}.crosshair::after{top:8px;left:0;height:1px;width:18px}
+
+.formats{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;padding:24px;border:1px solid var(--line);border-radius:16px}
+.fm{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.fm .f{position:relative;background:#0B0807;border:1px solid var(--line-2);border-radius:6px}
+.fm .safe{position:absolute;border:1px dashed rgba(255,194,26,.7)}
+.fm .logo{position:absolute;width:16px;height:16px}
+.fm span{font:400 11px/1.4 var(--f-mono);color:var(--fg-3)}
+.hier{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center}
+.hier ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;counter-reset:h}
+.hier li{display:grid;grid-template-columns:30px 100px 1fr;gap:10px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--fg-2);counter-increment:h}
+.hier li::before{content:counter(h,decimal-leading-zero);font:400 11px/1 var(--f-mono);color:var(--accent-text)}
+.hier li b{color:var(--fg);font-weight:600}
+@media(max-width:860px){.hier{grid-template-columns:1fr}}
+
+.pieces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start}
+.pc{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pc .cap2{display:flex;justify-content:space-between;gap:10px;font:400 11px/1.4 var(--f-mono);color:var(--fg-3)}
+.post{position:relative;overflow:hidden;border-radius:12px;color:#F6F0E7;background:#0B0807;padding:18px;display:flex;flex-direction:column;justify-content:space-between;border:1px solid var(--line);max-width:100%}
+.p45{aspect-ratio:4/5}.p916{aspect-ratio:9/16}.p169{aspect-ratio:16/9}
+.post .top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;font:400 9.5px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.post .top > span:last-child{opacity:.75}
+.post .top .lock{font-size:15px}
+.post h4{position:relative;z-index:1;font:900 clamp(24px,2.8vw,32px)/.94 var(--f-brand);letter-spacing:-.02em}
+.post h4 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.post .lbl{position:relative;z-index:1;font:500 9.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:block}
+.post .foot{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;font:400 10px/1.4 var(--f-mono)}
+.post .cta{display:inline-flex;align-items:center;gap:6px;background:#FF3B14;color:#fff;border-radius:999px;padding:8px 12px;font:600 12px/1 var(--f-ui)}
+.post .gb{position:absolute;inset:0;background-image:linear-gradient(rgba(246,240,231,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(246,240,231,.05) 1px,transparent 1px);background-size:22px 22px}
+.post .hl{position:absolute;border-radius:50%;background:var(--grad);filter:blur(50px);opacity:.5}
+.post.mz{background:#FFC21A;color:#110D0B}
+.post.az{background:#2F4BFF;color:#F6F0E7}
+.post .numx{position:relative;z-index:1;font:500 clamp(52px,7vw,78px)/1 var(--f-mono);letter-spacing:-.05em}
+.post .quote{position:relative;z-index:1;font:600 clamp(17px,2vw,21px)/1.25 var(--f-ui);letter-spacing:-.02em}
+@media(max-width:860px){.pieces{grid-template-columns:1fr}.post{max-width:420px}}
+
+.ui{border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:22px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{font:600 14px/1 var(--f-ui);border-radius:12px;padding:0 16px;height:44px;border:0;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:transform 90ms cubic-bezier(.32,.72,0,1),box-shadow 180ms ease,background-color 180ms ease;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn.sm{height:34px;font-size:13px;padding:0 12px;border-radius:9px}
+.btn.lg{height:52px;font-size:15.5px;padding:0 22px;border-radius:14px}
+.b-p{background:var(--brasa);color:#fff;box-shadow:0 0 0 1px rgba(255,59,20,.6),0 6px 22px -8px rgba(255,59,20,.75)}
+.b-p.hov,.b-p:hover{background:#FF4F2B;box-shadow:0 0 0 1px rgba(255,138,61,.9),0 8px 30px -6px rgba(255,59,20,.95)}
+.b-p.act{transform:scale(.97);background:#E8330F}
+.b-s{background:var(--surface-3);color:var(--fg)}
+.b-s.hov,.b-s:hover{background:var(--c600)}
+:root[data-theme="light"] .b-s.hov,:root[data-theme="light"] .b-s:hover{background:#D3CABD}
+.b-g{background:transparent;color:var(--fg);box-shadow:inset 0 0 0 1px var(--line-2)}
+.b-g.hov,.b-g:hover{box-shadow:inset 0 0 0 1px var(--fg-3)}
+.b-d{background:transparent;color:var(--accent-text);box-shadow:inset 0 0 0 1px rgba(255,59,20,.45)}
+.btn[disabled]{opacity:.38;cursor:not-allowed;box-shadow:none}
+.btn.load{position:relative;color:transparent}
+.btn.load::after{content:"";position:absolute;inset:0;margin:auto;width:16px;height:16px;border-radius:50%;border:2px solid #fff;border-top-color:transparent;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mx-wrap{overflow-x:auto}
+.matrix{display:grid;grid-template-columns:90px repeat(5,minmax(112px,1fr));gap:10px;align-items:center;min-width:700px}
+.matrix .h{font:400 10.5px/1 var(--f-mono);color:var(--fg-3);text-transform:uppercase;letter-spacing:.06em}
+.st{display:inline-flex;align-items:center;gap:7px;font:500 11px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:7px 11px;border-radius:999px;border:1px solid;white-space:nowrap}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.st-new{color:var(--accent-text);border-color:rgba(255,59,20,.4);background:rgba(255,59,20,.09)}
+.st-prep{color:var(--mostaza-text);border-color:rgba(255,194,26,.45);background:rgba(255,194,26,.09)}
+.st-ok{color:var(--azul-text);border-color:rgba(124,155,255,.45);background:rgba(47,75,255,.12)}
+.st-done{color:var(--fg-3);border-color:var(--line-2);background:transparent}
+.st-done::before{box-shadow:none}
+.st-late{color:#fff;border-color:#FF3B14;background:#FF3B14}
+.st-late::before{background:#fff;box-shadow:none}
+.fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media(max-width:860px){.fields{grid-template-columns:1fr 1fr}}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field .lb{font-size:13px;font-weight:500}
+.field .in{font:400 14.5px/1 var(--f-ui);color:var(--fg);background:var(--bg);border:1px solid var(--line-2);border-radius:10px;height:44px;padding:0 13px;width:100%;display:flex;align-items:center}
+.field .in.f{border-color:var(--brasa);box-shadow:0 0 0 3px rgba(255,59,20,.2)}
+.field .in.e{border-color:#FF3B14;background:rgba(255,59,20,.06)}
+.field .in.dis{opacity:.45}
+.field small{font-size:12px;color:var(--fg-3)}
+.field small.err{color:var(--accent-text)}
+.ctl{display:flex;flex-wrap:wrap;gap:22px;align-items:center}
+.seg{display:inline-flex;padding:3px;border-radius:11px;background:var(--bg);border:1px solid var(--line-2)}
+.seg span{font:500 13px/1 var(--f-ui);padding:9px 13px;border-radius:8px;color:var(--fg-2)}
+.seg span.on{background:var(--surface-3);color:var(--fg);box-shadow:inset 0 0 0 1px var(--line-2)}
+.sw-t{width:44px;height:26px;border-radius:999px;background:var(--surface-3);position:relative;display:inline-block;flex:none}
+.sw-t::after{content:"";position:absolute;width:20px;height:20px;border-radius:50%;background:var(--fg);top:3px;left:3px}
+.sw-t.on{background:var(--brasa);box-shadow:0 0 14px rgba(255,59,20,.5)}
+.sw-t.on::after{left:21px;background:#fff}
+.tabs{display:flex;gap:18px;border-bottom:1px solid var(--line);font-size:14px;flex-wrap:wrap}
+.tabs span{padding:10px 2px;color:var(--fg-2);display:flex;gap:7px;align-items:center}
+.tabs span.on{color:var(--fg);box-shadow:inset 0 -2px 0 var(--brasa)}
+.tabs i{font:500 10.5px/1 var(--f-mono);font-style:normal;padding:3px 6px;border-radius:6px;background:var(--surface-3);color:var(--fg-2)}
+.tabs span.on i{background:var(--brasa);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px;min-width:0}
+.kpi b{font:500 28px/1 var(--f-mono);letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.kpi .d{font:400 11.5px/1 var(--f-mono)}
+.kpi .up{color:var(--azul-text)} .kpi .dn{color:var(--accent-text)}
+.kpi svg{width:100%;height:34px}
+@media(max-width:860px){.kpis{grid-template-columns:1fr 1fr}}
+.panel-mock{display:grid;grid-template-columns:200px minmax(0,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--bg);min-height:420px}
+.side{border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.side .lock{font-size:20px;margin:2px 8px 18px}
+.side span.it{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;font-size:13.5px;color:var(--fg-2)}
+.side span.it svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.side span.it.on{background:var(--surface-3);color:var(--fg)}
+.side span.it.on svg{stroke:var(--brasa)}
+.side span.it em{margin-left:auto;font:500 10.5px/1 var(--f-mono);font-style:normal;color:#fff;background:var(--brasa);border-radius:999px;padding:3px 7px}
+.kanban{padding:16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-width:0}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.col .ch{display:flex;justify-content:space-between;align-items:center;font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--fg-3);padding:4px 2px}
+.oc{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px;display:flex;flex-direction:column;gap:8px}
+.oc .t{display:flex;justify-content:space-between;align-items:center;font:500 13px/1 var(--f-mono)}
+.oc .t span{font-weight:400;color:var(--fg-3);font-size:11.5px}
+.oc p{font-size:13px;color:var(--fg-2)}
+.oc .bar{height:3px;border-radius:2px;background:var(--surface-3);overflow:hidden}
+.oc .bar i{display:block;height:100%}
+.oc.hot{border-color:rgba(255,59,20,.5);box-shadow:0 0 26px -10px rgba(255,59,20,.7)}
+@media(max-width:860px){.panel-mock{grid-template-columns:1fr}.side{display:none}.kanban{grid-template-columns:1fr}}
+.misc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:860px){.misc{grid-template-columns:1fr}}
+.toast{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:14px;background:#17120F;border:1px solid rgba(246,240,231,.1);color:#F6F0E7}
+.toast .tile{width:38px;height:38px;flex:none;border-radius:10px}
+.toast b{display:block;font-size:13.5px}
+.toast span{font-size:12.5px;color:#B8ACA2}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:22px 14px;border:1px dashed var(--line-2);border-radius:12px}
+.empty svg{width:34px;height:38px;opacity:.6}
+.empty b{font-size:14.5px}
+.empty span{font-size:13px;color:var(--fg-2)}
+.skel{display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid var(--line);border-radius:12px}
+.skel i{display:block;height:11px;border-radius:6px;background:linear-gradient(90deg,var(--surface-2),var(--surface-3),var(--surface-2));background-size:200% 100%}
+@media (prefers-reduced-motion:no-preference){.skel i{animation:sh 1.6s linear infinite}}
+@keyframes sh{to{background-position:-200% 0}}
+.prod{display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:12px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2);align-items:center}
+.prod b{font-size:14.5px;display:block}
+.prod span.ds{font-size:12.5px;color:var(--fg-2);display:block;margin:3px 0 8px}
+.prod em{font:500 14px/1 var(--f-mono);font-style:normal}
+.prod .img{width:88px;height:88px;border-radius:10px;position:relative;overflow:hidden}
+.prod .add{position:absolute;right:6px;bottom:6px;width:28px;height:28px;border-radius:50%;background:#FF3B14;color:#fff;font:600 18px/28px var(--f-ui);text-align:center;box-shadow:0 0 12px rgba(255,59,20,.6)}
+
+.apps{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
+.phone{width:100%;max-width:250px;aspect-ratio:9/19;border-radius:36px;border:8px solid #050403;box-shadow:0 0 0 1px var(--line-2);background:radial-gradient(120% 70% at 30% 0%,#4A2215,#140D0A 50%,#0A0706);padding:36px 12px 12px;display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.notif{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.12);border-radius:16px;padding:9px;color:#fff;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.notif .tile{width:32px;height:32px;border-radius:8px;flex:none}
+.notif div{min-width:0;display:flex;flex-direction:column}
+.notif b{font-size:11.5px;display:flex;justify-content:space-between}
+.notif b small{font-weight:400;opacity:.6}
+.notif span{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.9}
+.home{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 0;justify-items:center}
+.ph{width:42px;height:42px;border-radius:10px;background:rgba(255,255,255,.1)}
+.ph.b{background:rgba(255,255,255,.06)}
+.hic{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:9.5px;color:#fff}
+.hic .tile{width:42px;height:42px;border-radius:10px}
+.kds{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0B0807;color:#F6F0E7;aspect-ratio:16/9;display:flex;flex-direction:column;max-width:100%}
+.kds .bar{display:flex;align-items:center;gap:14px;padding:10px 14px;border-bottom:1px solid rgba(246,240,231,.08);font:400 11px/1 var(--f-mono);color:#B8ACA2}
+.kds .bar .lock{font-size:15px;color:#F6F0E7}
+.kds .bar b{margin-left:auto;color:#F6F0E7;font-weight:500}
+.kds .cards{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;min-height:0}
+.kds .kc{border-radius:10px;border:1px solid rgba(246,240,231,.08);background:#15100E;padding:10px;display:flex;flex-direction:column;gap:6px;font-size:11px;min-width:0;overflow:hidden}
+.kds .kc b{font:500 13px/1 var(--f-mono);display:flex;justify-content:space-between}
+.kds .kc b span{font-weight:400;font-size:10.5px}
+.kds .kc p{font-size:11px;color:#D9CFC5}
+.kds .kc.late{border-color:#FF3B14;box-shadow:0 0 22px -6px rgba(255,59,20,.6)}
+.kds .kc.late b span{color:#FF6A45}
+.phys{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.ph-item{border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;place-items:center;min-height:270px;position:relative;background:var(--surface)}
+.ph-item small{position:absolute;left:14px;top:12px;font:400 10.5px/1 var(--f-mono);color:var(--fg-3)}
+.sticker{width:170px;aspect-ratio:1;border-radius:50%;background:#0B0807;color:#F6F0E7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;box-shadow:0 0 0 6px #F6F0E7,0 0 0 7px var(--line-2)}
+.sticker .lock{font-size:26px}
+.sticker span{font:500 9.5px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:#FFC21A}
+.tent{width:150px;aspect-ratio:3/4.2;background:#0B0807;border-radius:10px;color:#F6F0E7;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:14px 12px;box-shadow:0 18px 30px -16px rgba(0,0,0,.6)}
+.tent .lock{font-size:16px}
+.tent .qr{width:84px;height:84px;background:#F6F0E7;border-radius:6px;padding:6px;display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.tent .qr i{background:#110D0B;border-radius:1px}
+.tent .qr i.o{background:transparent}
+.tent p{font:600 12px/1.2 var(--f-ui);color:#F6F0E7;text-align:center}
+.tent span.ms{font:400 8.5px/1 var(--f-mono);color:#FFC21A;letter-spacing:.08em;text-transform:uppercase}
+.mail{width:100%;max-width:280px;border-radius:10px;overflow:hidden;border:1px solid var(--line-2);background:#F6F0E7;color:#110D0B}
+.mail .hd{background:#0B0807;color:#F6F0E7;padding:16px;display:flex;justify-content:space-between;align-items:center}
+.mail .hd .lock{font-size:16px}
+.mail .hd span.n{font:400 9.5px/1 var(--f-mono);color:#B8ACA2}
+.mail .bd{padding:16px;display:flex;flex-direction:column;gap:8px}
+.mail .bd b{font-size:15px}
+.mail .bd p{font-size:12px;color:#54483F}
+.mail .bd .cta{align-self:flex-start;background:#FF3B14;color:#fff;border-radius:8px;padding:8px 12px;font:600 12px/1 var(--f-ui)}
+@media(max-width:860px){.apps,.phys{grid-template-columns:1fr}.kds .cards{grid-template-columns:1fr 1fr}}
+
+.dd{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dd > div{border-radius:14px;border:1px solid var(--line);background:var(--surface);padding:20px}
+.dd h4{font:500 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+.dd .si h4{color:var(--azul-text)} .dd .no h4{color:var(--accent-text)}
+.dd ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.dd li{font-size:14.5px;color:var(--fg-2);padding-left:22px;position:relative}
+.dd .si li::before{content:"+";position:absolute;left:0;color:var(--azul-text);font-family:var(--f-mono)}
+.dd .no li::before{content:"×";position:absolute;left:0;color:var(--accent-text);font-family:var(--f-mono)}
+@media(max-width:700px){.dd{grid-template-columns:1fr}}
+.check{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;border:1px solid var(--line);border-radius:14px;padding:8px 20px;background:var(--surface)}
+.check div{display:flex;gap:12px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px;color:var(--fg-2)}
+.check div::before{content:"";flex:none;width:14px;height:14px;border:1.5px solid var(--fg-3);border-radius:4px;transform:translateY(2px)}
+@media(max-width:700px){.check{grid-template-columns:1fr}}
+pre{margin:0;background:#0B0807;color:#D9CFC5;border:1px solid var(--line);border-radius:14px;padding:22px;overflow-x:auto;font:400 12.5px/1.75 var(--f-mono)}
+pre .c{color:#7C7068} pre .v{color:#FF8A3D}
+footer{padding-block:40px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font:400 12px/1.6 var(--f-mono);color:var(--fg-3)}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="iso-path" transform="translate(12 12) scale(.92) translate(-12.453 -11.903)" fill-rule="evenodd" d="M12,20.6 C7.2,20.6 4.4,17.6 4.6,14.2 C4.8,10.6 8.4,8.6 11.2,6.2 C12.4,5.1 13.2,4.2 13.6,3.6 C14.0,3.0 14.9,3.1 15.1,3.8 C15.9,6.6 16.0,8.6 15.6,10.4 C16.6,9.8 17.3,9.0 17.7,8.2 C18.0,7.6 18.8,7.6 19.0,8.2 C19.9,10.6 20.0,13.0 19.6,15.0 C18.9,18.4 15.8,20.6 12,20.6 Z M12,17.6 C14.7,17.6 16.6,16 16.9,13.4 C16.2,14.2 15.2,14.7 14.4,14.7 C13.9,14.7 13.7,14.3 13.8,13.9 C14.2,12.4 13.9,10.6 13.2,9.2 C12,10.9 9.8,11.9 8.6,13.4 C7.4,15 8.6,17.6 12,17.6 Z"/>
+    <radialGradient id="g-nucleo" gradientUnits="userSpaceOnUse" cx="12.3" cy="13.4" r="9.4"><stop offset="0" stop-color="#FFE9D6"/><stop offset=".3" stop-color="#FF8A3D"/><stop offset=".66" stop-color="#FF3B14"/><stop offset="1" stop-color="#C81E08"/></radialGradient>
+    <linearGradient id="g-photo" x1="0" x2="1"><stop offset=".4" stop-color="#FF8A3D" stop-opacity="0"/><stop offset=".6" stop-color="#FF8A3D" stop-opacity=".35"/><stop offset=".75" stop-color="#FF8A3D" stop-opacity="0"/></linearGradient>
+    <filter id="f-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.1"/></filter>
+    <g id="iso-hot"><use href="#iso-path" fill="#FF3B14" filter="url(#f-glow)" opacity=".75"/><use href="#iso-path" fill="url(#g-nucleo)"/></g>
+    <clipPath id="clip-iso"><use href="#iso-path"/></clipPath>
+    <g id="grid24" fill="none" stroke-width=".045"><path d="M0,4H24M0,8H24M0,12H24M0,16H24M0,20H24M4,0V24M8,0V24M12,0V24M16,0V24M20,0V24M0,0L24,24M24,0L0,24"/><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><rect x="4" y="4" width="16" height="16"/></g>
+  </defs>
+</svg>
+
+<div class="status">
+  <span class="live">BLZR / brand-system</span>
+  <span class="hide-s">v2.0 · build 2026.10.15</span>
+  <span class="hide-s">iso: anillo-de-fuego · logo: rubik-black</span>
+  <span class="sp"></span>
+  <button id="theme" type="button">Modo claro</button>
+</div>
+
+<div class="shell">
+<nav class="toc" aria-label="Índice">
+  <div class="grp">Marca</div>
+  <a href="#fundamentos"><i>01</i>Fundamentos</a>
+  <a href="#iso"><i>02</i>Iso</a>
+  <a href="#logo"><i>03</i>Logo</a>
+  <div class="grp">Sistema</div>
+  <a href="#color"><i>04</i>Color</a>
+  <a href="#tipografia"><i>05</i>Tipografía</a>
+  <a href="#grilla"><i>06</i>Grilla y forma</a>
+  <div class="grp">Piezas</div>
+  <a href="#grafico"><i>07</i>Sistema gráfico</a>
+  <a href="#plantillas"><i>08</i>Plantillas</a>
+  <a href="#interfaz"><i>09</i>Interfaz</a>
+  <a href="#aplicaciones"><i>10</i>Aplicaciones</a>
+  <a href="#reglas"><i>11</i>Reglas y tokens</a>
+</nav>
+
+<main><div class="wrap">
+
+  <header class="cover">
+    <div class="meta">
+      <span class="label dot"><b>Manual de marca</b> · v2.0</span>
+      <div class="big-lock" role="img" aria-label="BLZR"><span class="tile t"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><span class="w">BLZR</span></div>
+      <p class="lead">El sistema de pedidos directos para restaurantes. Cómo se ve, cómo suena y cómo se construye cada pieza.</p>
+      <div class="specs"><div><span>Producto</span><b>Pedidos B2B</b></div><div><span>Modo base</span><b>Oscuro</b></div><div><span>Piezas</span><b>Web · app · redes</b></div></div>
+    </div>
+    <div class="art gridbg stage" aria-hidden="true">
+      <div class="halo"></div>
+      <svg class="main" viewBox="0 0 24 24"><use href="#grid24" stroke="rgba(246,240,231,.14)"/><use href="#iso-hot"/></svg>
+      <span class="xh" style="left:12px;top:12px">x 0 · y 0</span>
+      <span class="xh" style="right:12px;bottom:12px">24 × 24 m</span>
+      <span class="xh" style="right:12px;top:12px;color:var(--accent-text)">● encendido</span>
+    </div>
+  </header>
+  <div class="ticker" aria-hidden="true"><div class="in">
+    <span><b>#0427</b> 2× Smash doble · <i class="t-new">nuevo</i></span><span><b>#0426</b> Pizza muzzarella · <i class="t-prep">preparando</i></span><span><b>#0425</b> 3× Empanadas · <i class="t-ok">listo</i></span><span><b>#0424</b> Milanesa napolitana · entregado</span><span><b>18 min</b> tiempo medio</span><span><b>142</b> pedidos hoy</span>
+    <span><b>#0427</b> 2× Smash doble · <i class="t-new">nuevo</i></span><span><b>#0426</b> Pizza muzzarella · <i class="t-prep">preparando</i></span><span><b>#0425</b> 3× Empanadas · <i class="t-ok">listo</i></span><span><b>#0424</b> Milanesa napolitana · entregado</span><span><b>18 min</b> tiempo medio</span><span><b>142</b> pedidos hoy</span>
+  </div></div>
+  <div class="index">
+    <a href="#iso"><i>02</i><span>Iso</span></a><a href="#color"><i>04</i><span>Color</span></a><a href="#grafico"><i>07</i><span>Sistema gráfico</span></a><a href="#plantillas"><i>08</i><span>Plantillas</span></a><a href="#interfaz"><i>09</i><span>Interfaz</span></a>
+  </div>
+
+  <section class="sec" id="fundamentos">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>01-fundamentos</b></span><span>01 / 11</span></div>
+      <div class="row"><span class="num">01</span><div><h2>Una cocina que no se apaga</h2><p>BLZR es el sistema con el que un restaurante toma pedidos propios: menú online, checkout, cocina y reparto en un mismo lugar, sin intermediarios. La marca une dos mundos: el calor de una cocina en servicio y la precisión de un software que no falla en hora pico.</p></div></div>
+    </div>
+    <div class="vals">
+      <div><i>/01</i><h4>Directo</h4><p>Del cliente al local, sin vueltas. En el producto y en lo que decimos.</p></div>
+      <div><i>/02</i><h4>Preciso</h4><p>Cada número en pantalla sirve para decidir algo.</p></div>
+      <div><i>/03</i><h4>Encendido</h4><p>Energía de servicio: la marca brilla, se mueve, responde.</p></div>
+      <div><i>/04</i><h4>Del lado del local</h4><p>Hablamos como alguien que conoce un salón lleno.</p></div>
+    </div>
+    <div class="g2">
+      <div class="panel"><span class="k">Nombre</span><p><strong>BLZR</strong>, en mayúsculas y sin vocales. Se pronuncia "blazer". Nunca "Blzr" ni "BLAZR".</p></div>
+      <div class="panel"><span class="k">Descriptor</span><p><strong>BLZR · Pedidos directos</strong>. El descriptor va en Geist, nunca en la tipografía del logo.</p></div>
+    </div>
+    <h3>Tono de voz <small>vos · corto · dato primero</small></h3>
+    <div class="voice">
+      <div class="say si"><span class="t">Así</span><q>Entraron 14 pedidos en la última hora. El más viejo espera hace 6 min.</q></div>
+      <div class="say no"><span class="t">Así no</span><q>¡Tu negocio está on fire! No te lo pierdas.</q></div>
+      <div class="say si"><span class="t">Así</span><q>Tu menú, tus pedidos, tus clientes.</q></div>
+      <div class="say no"><span class="t">Así no</span><q>Revolucionamos la experiencia gastronómica con soluciones disruptivas.</q></div>
+    </div>
+  </section>
+
+  <section class="sec" id="iso">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>02-iso</b></span><span>02 / 11</span></div>
+      <div class="row"><span class="num">02</span><div><h2>El anillo de fuego</h2><p>Una llama gruesa con una segunda lengua adentro. Es una sola forma sólida que se reconoce a 16 px y brilla en grande. El hueco interior es el núcleo: el lugar donde arde el pedido.</p></div></div>
+    </div>
+    <div class="construct">
+      <div class="cons-box gridbg stage">
+        <svg viewBox="-1.5 -1.5 27 27" role="img" aria-label="Construcción del iso en la grilla de 24 módulos">
+          <rect x="0" y="0" width="24" height="24" rx="5.4" fill="#110D0B" stroke="rgba(246,240,231,.14)" stroke-width=".05"/>
+          <use href="#grid24" stroke="rgba(246,240,231,.2)"/>
+          <use href="#iso-path" fill="#FF3B14" fill-opacity=".9"/>
+          <g fill="none" stroke="#FFC21A" stroke-width=".055" stroke-dasharray=".28 .22"><path d="M-1,4 H25 M-1,20 H25"/><path d="M12,-1 V25"/></g>
+          <circle cx="12" cy="13.28" r=".32" fill="#FFC21A"/>
+          <circle cx="12" cy="13.28" r=".9" fill="none" stroke="#FFC21A" stroke-width=".05"/>
+          <g font-family="Geist Mono, monospace" font-size=".55" fill="#FFC21A"><text x="20.6" y="3.7">y 4</text><text x="20.6" y="19.7">y 20</text><text x="12.4" y="-.5">x 12 · eje de masa</text><text x="13.1" y="13.5">centro de masa</text></g>
+        </svg>
+        <span class="cap" style="text-align:center">Grilla de ícono 24 × 24 · 1 módulo = 42,67 px a 1024</span>
+      </div>
+      <div class="dims">
+        <div><b>16 m</b>Alto: del módulo 4 al 20, toca las dos líneas del cuadrado clave.</div>
+        <div><b>14 m</b>Ancho. La llama es más alta que ancha.</div>
+        <div><b>x 12</b>Centrado por masa, no por caja. La llama pesa a la derecha; centrar la caja la hacía ver corrida.</div>
+        <div><b>≈ 2,5 m</b>Grosor del anillo en la base. Se afina hacia las puntas.</div>
+        <div><b>1 m</b>Aire mínimo entre el iso y el borde del cuadrado clave.</div>
+        <div><b>22,5 %</b>Radio del ícono contenedor, igual al de iOS.</div>
+      </div>
+    </div>
+    <h3>Versiones <small>4 base + 2 sobre color</small></h3>
+    <div class="g6 vers">
+      <div class="v" style="background:#0B0807;color:#F6F0E7"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-hot"/></svg><small>Núcleo</small></div>
+      <div class="v" style="background:#0B0807;color:#F6F0E7"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#FF3B14"/></svg><small>Brasa</small></div>
+      <div class="v" style="background:#FF3B14;color:#F6F0E7"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#F6F0E7"/></svg><small>Hueso</small></div>
+      <div class="v" style="background:#F6F0E7;color:#110D0B"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#110D0B"/></svg><small>Carbón</small></div>
+      <div class="v" style="background:#FFC21A;color:#110D0B"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#110D0B"/></svg><small>Sobre mostaza</small></div>
+      <div class="v" style="background:#2F4BFF;color:#F6F0E7"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#F6F0E7"/></svg><small>Sobre azul</small></div>
+    </div>
+    <p><strong>Núcleo</strong> es la versión de marca: degradé radial del centro casi blanco a Brasa, con halo. Va en el ícono de app, portadas y piezas digitales. <strong>Brasa</strong> va en la interfaz y debajo de 24 px. Las de una tinta son para impresión y fondos de color; sobre mostaza el iso va en Carbón, nunca en Brasa.</p>
+
+    <h3>Ícono de app y favicon</h3>
+    <div class="icons-row gridbg">
+      <div><span class="tile" style="width:128px;height:128px"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><span class="cap">1024 · tiendas</span></div>
+      <div><span class="tile" style="width:80px;height:80px"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><span class="cap">180 · iPhone</span></div>
+      <div><span class="tile" style="width:48px;height:48px"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><span class="cap">48 · Android</span></div>
+      <div><svg width="32" height="32" viewBox="4.4 3.6 15.2 16.8"><use href="#iso-path" fill="#FF3B14"/></svg><span class="cap">32 · favicon</span></div>
+      <div><svg width="16" height="16" viewBox="4.4 3.6 15.2 16.8"><use href="#iso-path" fill="#FF3B14"/></svg><span class="cap">16 · favicon</span></div>
+      <div><span class="fav-tab"><svg width="14" height="14" viewBox="4.4 3.6 15.2 16.8"><use href="#iso-path" fill="#FF3B14"/></svg>BLZR · Panel</span><span class="cap">pestaña</span></div>
+    </div>
+    <div class="rule m"><b>Favicon</b>El favicon usa el iso suelto, sin el cuadrado del ícono, con 0,2 módulos de aire alrededor. Así no se recorta y ocupa todo el espacio disponible.</div>
+
+    <h3>Movimiento <small>encendido · 1,4 s</small></h3>
+    <div class="motion-box">
+      <span class="tile"><svg viewBox="0 0 24 24"><g class="ignite play" id="ignite"><use href="#iso-hot"/></g></svg></span>
+      <div class="steps">
+        <div><b>0 ms</b>El iso aparece al 60 % de tamaño, apagado.</div>
+        <div><b>620 ms</b>Pico de brillo: el núcleo se enciende al 150 %.</div>
+        <div><b>980 ms</b>Rebote al 104 %, como una llama que toma aire.</div>
+        <div><b>1400 ms</b>Reposo. Curva de salida (0.32, 0.72, 0, 1).</div>
+        <button class="btn-mini" id="replay" type="button">Volver a encender</button>
+      </div>
+    </div>
+
+    <h3>Usos incorrectos</h3>
+    <div class="g4 misuse">
+      <figure><div class="v"><svg viewBox="4.6 3.8 14.8 16.4" style="transform:scaleX(1.35)"><use href="#iso-path" fill="#FF3B14"/></svg><span class="x">Deformado</span></div><figcaption>No estirar ni comprimir.</figcaption></figure>
+      <figure><div class="v"><svg viewBox="4.6 3.8 14.8 16.4" style="transform:rotate(-25deg)"><use href="#iso-path" fill="#FF3B14"/></svg><span class="x">Rotado</span></div><figcaption>La llama siempre sube.</figcaption></figure>
+      <figure><div class="v"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="none" stroke="#FF3B14" stroke-width=".5"/></svg><span class="x">Contorno</span></div><figcaption>No usar en línea.</figcaption></figure>
+      <figure><div class="v" style="background:#FFC21A"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#FF3B14"/></svg><span class="x" style="color:#110D0B;border-color:#110D0B">Contraste</span></div><figcaption>Brasa sobre mostaza no se lee.</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="sec" id="logo">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>03-logo</b></span><span>03 / 11</span></div>
+      <div class="row"><span class="num">03</span><div><h2>Iso + palabra</h2><p>BLZR en <strong>Rubik Black</strong>, recto y sin swoosh. Hay dos lockups: el ícono + palabra, para portadas, firmas y todo lo que funcione como "app"; y el iso suelto + palabra, para piezas e interfaz.</p></div></div>
+    </div>
+    <div class="g2">
+      <div class="lk d span2"><small>A · Ícono + palabra · principal</small><span class="lock" style="font-size:clamp(52px,9vw,104px)"><span class="tile t"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><span class="w">BLZR</span></span></div>
+      <div class="lk d"><small>B · Iso suelto + palabra</small><span class="lock" style="font-size:60px"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span></div>
+      <div class="lk l"><small>B · Fondo claro</small><span class="lock" style="font-size:60px"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-path" fill="#FF3B14"/></svg><span class="w">BLZR</span></span></div>
+      <div class="lk b"><small>B · Una tinta sobre Brasa</small><span class="lock" style="font-size:60px"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-path" fill="#F6F0E7"/></svg><span class="w">BLZR</span></span></div>
+      <div class="lk d"><small>C · Vertical</small><span class="lock stack" style="font-size:46px"><span class="tile t" style="width:1.5em;height:1.5em"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><span class="w">BLZR</span></span></div>
+      <div class="lk m"><small>Sobre mostaza</small><span class="lock" style="font-size:54px"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-path" fill="#110D0B"/></svg><span class="w">BLZR</span></span></div>
+      <div class="lk a"><small>Sobre azul llama</small><span class="lock" style="font-size:54px"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-path" fill="#F6F0E7"/></svg><span class="w">BLZR</span></span></div>
+    </div>
+    <h3>Construcción <small>x = alto de la mayúscula</small></h3>
+    <div class="lk-build gridbg stage">
+      <svg viewBox="0 0 560 190" role="img" aria-label="Medidas del lockup A">
+        <rect x="40" y="41" width="110" height="110" rx="24.75" fill="#110D0B" stroke="rgba(246,240,231,.15)"/>
+        <svg x="40" y="41" width="110" height="110" viewBox="0 0 24 24"><use href="#iso-hot"/></svg>
+        <text x="176" y="135" font-family="Rubik, sans-serif" font-weight="900" font-size="108" letter-spacing="-2.7" fill="#F6F0E7">BLZR</text>
+        <g stroke="#FFC21A" stroke-width="1" fill="none" stroke-dasharray="3 3"><path d="M20,57 H540 M20,135 H540"/><path d="M150,20 V172 M176,20 V172"/></g>
+        <g font-family="Geist Mono, monospace" font-size="10" fill="#FFC21A"><text x="514" y="52">x</text><text x="478" y="150">línea base</text><text x="146" y="186">0,32x</text><text x="40" y="186">ícono 1,4x</text><text x="0" y="100">x = 78</text></g>
+      </svg>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Regla</th><th>A · ícono + palabra</th><th>B · iso suelto</th></tr></thead>
+      <tbody>
+        <tr><td>Alto del iso</td><td class="m">1,4x · centrado en x</td><td class="m">1,16x · centrado en x</td></tr>
+        <tr><td>Separación</td><td class="m">0,32x</td><td class="m">0,32x</td></tr>
+        <tr><td>Área de respeto</td><td class="m">0,5x por lado</td><td class="m">1x por lado</td></tr>
+        <tr><td>Mínimo</td><td class="m">96 px · 24 mm</td><td class="m">80 px · 20 mm</td></tr>
+        <tr><td>Tracking</td><td class="m" colspan="2">−2,5 % · kerning a mano entre L-Z y Z-R en la versión final en curvas</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="sec" id="color">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>04-color</b></span><span>04 / 11</span></div>
+      <div class="row"><span class="num">04</span><div><h2>Carbón, fuego y dos acentos</h2><p>El carbón es el fondo y el fuego es lo que brilla. Mostaza y Llama azul son los acentos: le dan variedad a miles de piezas sin perder la marca, y en la interfaz tienen un rol fijo en los estados del pedido.</p></div></div>
+    </div>
+    <div class="core">
+      <div class="sw" style="background:var(--grad);color:#110D0B"><span class="role">Firma</span><div><h4>Núcleo</h4><div class="d">radial · FFE9D6 → FF8A3D → FF3B14 → C81E08</div></div></div>
+      <div class="sw" style="background:#0B0807;color:#F6F0E7"><span class="role">Base</span><div><h4>Carbón</h4><div class="d">#0B0807 · rgb 11 8 7</div></div></div>
+      <div class="sw" style="background:#FF3B14;color:#110D0B"><span class="role">Acción</span><div><h4>Brasa</h4><div class="d">#FF3B14 · rgb 255 59 20</div></div></div>
+    </div>
+    <div class="sec2">
+      <div class="sw" style="background:#F6F0E7;color:#110D0B;min-height:170px"><span class="role">Texto · claro</span><div><h4>Hueso</h4><div class="d">#F6F0E7</div></div></div>
+      <div class="sw" style="background:#FFC21A;color:#110D0B;min-height:170px"><span class="role">Acento cálido</span><div><h4>Mostaza</h4><div class="d">#FFC21A · datos, destacados, "preparando"</div></div></div>
+      <div class="sw" style="background:#2F4BFF;color:#F6F0E7;min-height:170px"><span class="role">Acento frío</span><div><h4>Llama azul</h4><div class="d">#2F4BFF · info, links, "listo"</div></div></div>
+    </div>
+    <div class="ramp-lbl"><span>Fuego</span><span>claro → oscuro</span></div>
+    <div class="ramp">
+      <div style="background:#FFE9D6;color:#110D0B"><b>Núcleo</b>FFE9D6</div>
+      <div style="background:#FF8A3D;color:#110D0B"><b>Ámbar</b>FF8A3D</div>
+      <div style="background:#FF3B14;color:#110D0B"><b>Brasa</b>FF3B14</div>
+      <div style="background:#D42A0A;color:#F6F0E7"><b>Profunda</b>D42A0A</div>
+      <div style="background:#C81E08;color:#F6F0E7"><b>Rescoldo</b>C81E08</div>
+      <div style="background:#5A1206;color:#F6F0E7"><b>Ceniza</b>5A1206</div>
+    </div>
+    <div class="ramp-lbl"><span>Mostaza</span><span></span></div>
+    <div class="ramp">
+      <div style="background:#FFF3CC;color:#110D0B"><b>50</b>FFF3CC</div>
+      <div style="background:#FFE08A;color:#110D0B"><b>200</b>FFE08A</div>
+      <div style="background:#FFC21A;color:#110D0B"><b>400</b>FFC21A</div>
+      <div style="background:#D99E00;color:#110D0B"><b>600</b>D99E00</div>
+      <div style="background:#8A5E00;color:#F6F0E7"><b>800</b>8A5E00</div>
+      <div style="background:#3D2A00;color:#F6F0E7"><b>950</b>3D2A00</div>
+    </div>
+    <div class="ramp-lbl"><span>Llama azul</span><span></span></div>
+    <div class="ramp">
+      <div style="background:#E3E8FF;color:#110D0B"><b>50</b>E3E8FF</div>
+      <div style="background:#7C9BFF;color:#110D0B"><b>300</b>7C9BFF</div>
+      <div style="background:#2F4BFF;color:#F6F0E7"><b>500</b>2F4BFF</div>
+      <div style="background:#1F33C7;color:#F6F0E7"><b>700</b>1F33C7</div>
+      <div style="background:#14207A;color:#F6F0E7"><b>850</b>14207A</div>
+      <div style="background:#0A1040;color:#F6F0E7"><b>950</b>0A1040</div>
+    </div>
+    <div class="ramp-lbl"><span>Carbón</span><span></span></div>
+    <div class="ramp">
+      <div style="background:#0B0807;color:#B8ACA2"><b style="color:#F6F0E7">950</b>fondo</div>
+      <div style="background:#110D0B;color:#B8ACA2"><b style="color:#F6F0E7">900</b>superficie</div>
+      <div style="background:#1A1411;color:#B8ACA2"><b style="color:#F6F0E7">800</b>card</div>
+      <div style="background:#241C18;color:#B8ACA2"><b style="color:#F6F0E7">700</b>control</div>
+      <div style="background:#342923;color:#B8ACA2"><b style="color:#F6F0E7">600</b>borde</div>
+      <div style="background:#7C7068;color:#110D0B"><b>400</b>texto bajo</div>
+    </div>
+
+    <h3>Proporción por pieza</h3>
+    <div class="ratio" aria-label="Proporción de uso del color">
+      <div style="flex:62;background:#0B0807;color:#B8ACA2">Carbón 62</div>
+      <div style="flex:16;background:#F6F0E7;color:#110D0B">Hueso 16</div>
+      <div style="flex:12;background:#FF3B14;color:#110D0B">Brasa 12</div>
+      <div style="flex:6;background:#FFC21A;color:#110D0B">6</div>
+      <div style="flex:4;background:#2F4BFF;color:#F6F0E7">4</div>
+    </div>
+    <p>En campañas, una pieza puede ir con fondo Mostaza o Llama azul (un "campo de color"), pero nunca más de una de cada cinco piezas seguidas. El feed se tiene que leer carbón.</p>
+
+    <h3>Combinaciones <small>contraste medido</small></h3>
+    <div class="pairs">
+      <div class="pair" style="background:#0B0807;color:#FF3B14"><b>BLZR</b><span style="color:#B8ACA2">Brasa / Carbón · 5,6</span></div>
+      <div class="pair" style="background:#0B0807;color:#FFC21A"><b>18 min</b><span style="color:#B8ACA2">Mostaza / Carbón · 12,3</span></div>
+      <div class="pair" style="background:#FFC21A;color:#110D0B"><b>142</b><span>Carbón / Mostaza · 12,3</span></div>
+      <div class="pair" style="background:#2F4BFF;color:#F6F0E7"><b>Listo</b><span>Hueso / Azul · 5,2</span></div>
+      <div class="pair" style="background:#FF3B14;color:#110D0B"><b>Nuevo</b><span>Carbón / Brasa · 5,6</span></div>
+      <div class="pair" style="background:#F6F0E7;color:#D42A0A"><b>BLZR</b><span style="color:#54483F">Profunda / Hueso · 4,5</span></div>
+      <div class="pair no" style="background:#FFC21A;color:#FF3B14"><b>BLZR</b><span style="color:#110D0B">Brasa / Mostaza · 2,2</span></div>
+      <div class="pair no" style="background:#2F4BFF;color:#FF3B14"><b>BLZR</b><span style="color:#F6F0E7">Brasa / Azul · vibra</span></div>
+    </div>
+
+    <h3>Datos y gráficos</h3>
+    <div class="dv" role="img" aria-label="Ejemplo de gráfico de barras con la paleta de datos">
+      <div style="height:82%;background:#FF3B14"><span>Delivery</span></div>
+      <div style="height:58%;background:#FFC21A"><span>Retiro</span></div>
+      <div style="height:40%;background:#2F4BFF"><span>Salón</span></div>
+      <div style="height:22%;background:#7C7068"><span>Otros</span></div>
+    </div>
+    <p>Orden fijo de series: Brasa, Mostaza, Azul, Carbón 400. Para una sola serie, Brasa; la barra destacada puede llevar halo.</p>
+  </section>
+
+  <section class="sec" id="tipografia">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>05-tipografia</b></span><span>05 / 11</span></div>
+      <div class="row"><span class="num">05</span><div><h2>Tres voces, un trabajo cada una</h2><p>Rubik Black es la voz de la marca: corta y fuerte. Geist hace la interfaz y la lectura. Geist Mono se encarga de todo lo que se cuenta: pedidos, precios, tiempos y rótulos.</p></div></div>
+    </div>
+    <div class="tcard"><div class="big" style="font:900 clamp(52px,9vw,112px)/.9 var(--f-brand);letter-spacing:-.025em">Servicio lleno</div><div class="chars" style="font-family:var(--f-brand);font-weight:900">ABCDEFGHIJKLMNÑOPQRSTUVWXYZ 0123456789</div><div class="meta"><span><b>Rubik Black 900</b></span><span>Logo · titulares de campaña · cifras héroe</span><span>Tracking −2,5 % · interlineado 0,9</span><span>Máx. 6 palabras</span></div></div>
+    <div class="g2">
+      <div class="tcard"><div class="big" style="font:600 clamp(40px,5.6vw,64px)/1 var(--f-ui);letter-spacing:-.04em">Cocina abierta</div><div class="chars" style="font-family:var(--f-ui);font-size:18px">Aa Bb Cc 0123456789 · 400 500 600</div><div class="meta"><span><b>Geist</b></span><span>Interfaz · títulos · texto</span></div></div>
+      <div class="tcard"><div class="big" style="font:500 clamp(40px,5vw,60px)/1 var(--f-mono);letter-spacing:-.05em">#0427</div><div class="chars" style="font-family:var(--f-mono);font-size:18px">$ 18.400 · 12:42 · 18 min</div><div class="meta"><span><b>Geist Mono</b></span><span>Datos · tickets · rótulos</span></div></div>
+    </div>
+    <h3>Escala</h3>
+    <div class="scale">
+      <div class="r"><span class="tag">Héroe</span><span class="s" style="font:900 60px/1 var(--f-brand);letter-spacing:-.025em">Tu cocina</span><span class="spec">Rubik 900 · 60/54 · −2,5 %</span></div>
+      <div class="r"><span class="tag">H1</span><span class="s" style="font:600 40px/1.1 var(--f-ui);letter-spacing:-.04em">Pedidos de hoy</span><span class="spec">Geist 600 · 40/44 · −4 %</span></div>
+      <div class="r"><span class="tag">H2</span><span class="s" style="font:600 28px/1.2 var(--f-ui);letter-spacing:-.03em">En preparación</span><span class="spec">Geist 600 · 28/34 · −3 %</span></div>
+      <div class="r"><span class="tag">H3</span><span class="s" style="font:600 20px/1.3 var(--f-ui);letter-spacing:-.02em">Detalle del pedido</span><span class="spec">Geist 600 · 20/26 · −2 %</span></div>
+      <div class="r"><span class="tag">Texto</span><span class="s" style="font:400 16px/1.55 var(--f-ui)">El cliente pidió sin cebolla y retira por el local.</span><span class="spec">Geist 400 · 16/25</span></div>
+      <div class="r"><span class="tag">Chico</span><span class="s" style="font:400 13.5px/1.5 var(--f-ui);color:var(--fg-2)">Actualizado hace 2 minutos</span><span class="spec">Geist 400 · 13,5/20</span></div>
+      <div class="r"><span class="tag">Dato</span><span class="s" style="font:500 15px/1 var(--f-mono)">#0427 · 2× Smash doble · $ 13.200</span><span class="spec">Mono 500 · 15</span></div>
+      <div class="r"><span class="tag">Rótulo</span><span class="s" style="font:500 11.5px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--fg-3)">Pedidos activos</span><span class="spec">Mono 500 · 11,5 · +12 % · mayús.</span></div>
+    </div>
+    <h3>Cómo se escriben los datos</h3>
+    <div class="fmt">
+      <div><b>#0427</b><span>Pedido: numeral y 4 dígitos.</span></div>
+      <div><b>$ 18.400</b><span>Precio: signo, espacio, punto de miles, sin centavos.</span></div>
+      <div><b>12:42</b><span>Hora: 24 h, sin "hs".</span></div>
+      <div><b>18 min</b><span>Duración: número, espacio, unidad corta.</span></div>
+    </div>
+  </section>
+
+  <section class="sec" id="grilla">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>06-grilla</b></span><span>06 / 11</span></div>
+      <div class="row"><span class="num">06</span><div><h2>Base 4, profundidad con luz</h2><p>Todo se mide en múltiplos de 4. No hay sombras grises: la profundidad se marca con un paso de superficie, y lo importante se enciende con brillo de brasa.</p></div></div>
+    </div>
+    <div class="layouts">
+      <div class="lay"><span class="k">Web · 12 columnas · margen 32 · gutter 24</span><div class="cols" style="grid-template-columns:repeat(12,1fr)"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="lay"><span class="k">App · 4 col · margen 16</span><div class="cols" style="grid-template-columns:repeat(4,1fr)"><i></i><i></i><i></i><i></i></div></div>
+    </div>
+    <div class="g2">
+      <div class="panel"><span class="k">Espaciado</span>
+        <div class="space-bars">
+          <div>4 · xs<i style="width:4px"></i></div><div>8 · s<i style="width:8px"></i></div><div>12<i style="width:12px"></i></div><div>16 · m<i style="width:16px"></i></div><div>24 · l<i style="width:24px"></i></div><div>32<i style="width:32px"></i></div><div>48 · xl<i style="width:48px"></i></div><div>64<i style="width:64px"></i></div><div>96 · 2xl<i style="width:96px"></i></div><div>128<i style="width:128px"></i></div>
+        </div>
+      </div>
+      <div class="panel"><span class="k">Radios</span>
+        <div class="radii"><div style="border-radius:6px">6 · tags</div><div style="border-radius:10px">10 · inputs</div><div style="border-radius:12px">12 · botones</div><div style="border-radius:14px">14 · cards</div><div style="border-radius:22.5%">22,5 % · ícono</div></div>
+        <p>Los radios salen del ícono: es la misma curva aplicada a la escala de la interfaz.</p>
+      </div>
+    </div>
+    <h3>Elevación</h3>
+    <div class="elev">
+      <div class="e0">0 · Plano<small>Borde de 1 px</small></div>
+      <div class="e1">1 · Card<small>Carbón 800</small></div>
+      <div class="e2">2 · Flotante<small>Carbón 700 + filo de luz</small></div>
+      <div class="e3">Encendido<small>Borde y halo Brasa · requiere atención</small></div>
+    </div>
+  </section>
+
+  <section class="sec" id="grafico">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>07-sistema-grafico</b></span><span>07 / 11</span></div>
+      <div class="row"><span class="num">07</span><div><h2>El kit con el que se arma todo</h2><p>De acá salen miles de piezas, así que el sistema es un kit cerrado: doce elementos con código, que se combinan con reglas. Si una pieza necesita algo que no está acá, primero se suma al kit.</p></div></div>
+    </div>
+    <div class="kit">
+      <div class="el"><div class="demo d-halo"><div class="o"></div></div><div class="txt"><b>Halo <i>G-01</i></b><span>Degradé Núcleo desenfocado detrás del punto focal. Uno por pieza, nunca debajo de texto chico.</span></div></div>
+      <div class="el"><div class="demo"><svg viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%"><g fill="none" stroke="#FF8A3D" stroke-width="1"><path d="M-20,175 C60,165 110,100 150,96 C200,92 240,145 320,138" opacity=".9"/><path d="M-20,150 C60,140 110,78 150,74 C200,70 240,120 320,112" opacity=".65"/><path d="M-20,125 C60,115 110,56 150,52 C200,48 240,95 320,86" opacity=".45"/><path d="M-20,100 C60,90 110,34 150,30 C200,26 240,70 320,60" opacity=".28"/><path d="M-20,75 C60,65 110,12 150,8 C200,4 240,45 320,34" opacity=".15"/></g><circle cx="150" cy="96" r="4" fill="#FF3B14"/><circle cx="150" cy="96" r="12" fill="none" stroke="#FF3B14" stroke-opacity=".5"/></svg></div><div class="txt"><b>Curvas de calor <i>G-02</i></b><span>Líneas que se abren desde un punto encendido. Fondo de portadas, slides y banners. Siempre Ámbar, 1 px.</span></div></div>
+      <div class="el"><div class="demo d-grid"></div><div class="txt"><b>Grilla técnica <i>G-03</i></b><span>Retícula de 20–24 px al 7 %. Un solo recuadro encendido marca la zona de interés.</span></div></div>
+      <div class="el"><div class="demo d-dots"></div><div class="txt"><b>Campo de puntos <i>G-04</i></b><span>Puntos de 1 px que se desvanecen desde una esquina. Textura para fondos lisos y piezas con mucho texto.</span></div></div>
+      <div class="el"><div class="demo"><div class="photo"></div><span class="crosshair" style="left:58%;top:44%"></span><svg viewBox="0 0 300 200" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><path d="M182,96 L230,52 H286" fill="none" stroke="rgba(246,240,231,.7)" stroke-width="1"/></svg><span style="position:absolute;right:14px;top:30px;font:400 10.5px/1.4 var(--f-mono);color:#F6F0E7;text-align:right">SMASH DOBLE<br><span style="color:#FFC21A">$ 13.200 · 12 min</span></span></div><div class="txt"><b>Anotación <i>G-05</i></b><span>Mira + línea quebrada a 45° + rótulo mono. Para señalar un plato, una función o un dato en una foto o captura.</span></div></div>
+      <div class="el"><div class="demo d-data"><div><span>Pedidos hoy</span><b>142</b></div><div><span>Tiempo medio</span><b style="color:#FFC21A">18 min</b></div><div><span>Ticket promedio</span><b>$ 14.900</b></div><div><span>Delivery</span><b>64 %</b></div></div><div class="txt"><b>Fila de datos <i>G-06</i></b><span>Rótulo a la izquierda, número mono a la derecha, separador punteado. El ticket de cocina hecho sistema.</span></div></div>
+      <div class="el"><div class="demo d-ticket" style="background:#241C18"><div class="tk"><div class="h"><span>BLZR</span><span>#0427</span></div><div class="r"><span>2× Smash doble</span><span>13.200</span></div><div class="r"><span>1× Papas cheddar</span><span>5.200</span></div><div class="t"><span>TOTAL</span><span>$ 18.400</span></div></div></div><div class="txt"><b>Comanda <i>G-07</i></b><span>Ticket con borde dentado. Para mostrar un pedido real en redes, mails y onboarding.</span></div></div>
+      <div class="el"><div class="demo d-num"><b>18 min</b><span>Tiempo medio de preparación</span></div><div class="txt"><b>Cifra héroe <i>G-08</i></b><span>Un número en mono con el degradé Núcleo. Una cifra por pieza, con su rótulo debajo.</span></div></div>
+      <div class="el"><div class="demo d-chips"><span class="st st-new">Nuevo</span><span class="st st-prep">Preparando</span><span class="st st-ok">Listo</span><span class="st st-done">Entregado</span><span class="st st-late">Demorado 12 min</span></div><div class="txt"><b>Chips de estado <i>G-09</i></b><span>Los estados de la interfaz también son gráfica: cuentan el recorrido de un pedido en cualquier pieza.</span></div></div>
+      <div class="el"><div class="demo d-field"><div style="background:#FFC21A;color:#110D0B">MOSTAZA</div><div style="background:#0B0807;color:#7C7068">CARBÓN</div><div style="background:#FF3B14;color:#110D0B">BRASA</div><div style="background:#2F4BFF;color:#F6F0E7">AZUL</div></div><div class="txt"><b>Campos de color <i>G-10</i></b><span>Bloques planos que parten la pieza en zonas. Siempre con bordes rectos, alineados a la grilla.</span></div></div>
+      <div class="el"><div class="demo d-pattern" id="pattern"></div><div class="txt"><b>Patrón de iso <i>G-11</i></b><span>El iso repetido en Carbón 600, con uno solo encendido. Para packaging, merch y slides de cierre.</span></div></div>
+      <div class="el"><div class="demo" style="display:grid;place-items:center"><svg viewBox="4 3.2 16 17.6" style="height:88%;width:auto"><g clip-path="url(#clip-iso)"><rect x="0" y="0" width="24" height="24" fill="#3A1609"/><circle cx="14" cy="14" r="7" fill="#7A2C12"/><rect x="0" y="0" width="24" height="24" fill="url(#g-photo)"/><text x="12" y="15.2" text-anchor="middle" font-family="Geist Mono, monospace" font-size=".75" fill="#F6F0E7">FOTO</text></g></svg></div><div class="txt"><b>Máscara de iso <i>G-12</i></b><span>Foto recortada con la silueta del iso. Solo en piezas de marca grandes; nunca por debajo de 200 px.</span></div></div>
+    </div>
+
+    <h3>Fotografía</h3>
+    <div class="g3">
+      <div class="el"><div class="demo"><div class="photo"></div><span class="ph-label">Plato · luz lateral cálida · fondo carbón</span></div><div class="txt"><b>Plato en clave baja</b><span>Fondo oscuro, una fuente de luz cálida de costado, el plato al centro. El brillo hace de halo natural.</span></div></div>
+      <div class="el"><div class="demo"><div class="photo" style="background:radial-gradient(70% 60% at 40% 70%,#8A3A14 0%,#3A1609 45%,#0E0807 85%)"></div><span class="ph-label">Cocina en servicio · movimiento · fuego real</span></div><div class="txt"><b>Cocina en servicio</b><span>Manos, plancha, fuego. Velocidad de obturación lenta para que se sienta el movimiento.</span></div></div>
+      <div class="el"><div class="demo"><div class="photo" style="background:radial-gradient(60% 60% at 60% 40%,#4A2215 0%,#1E120D 50%,#0B0807 90%)"></div><span class="ph-label">Pantalla de BLZR en uso · salón de fondo</span></div><div class="txt"><b>Producto en contexto</b><span>El panel o la tablet en el mostrador, con el local desenfocado atrás. La pantalla siempre en modo oscuro.</span></div></div>
+    </div>
+    <div class="dd">
+      <div class="si"><h4>Foto · sí</h4><ul><li>Clave baja, contraste alto, luz cálida.</li><li>Comida real de restaurantes reales.</li><li>Grano y textura; un poco de humo o vapor.</li></ul></div>
+      <div class="no"><h4>Foto · no</h4><ul><li>Fondos blancos de estudio o banco de imágenes.</li><li>Gente posando y sonriendo a cámara.</li><li>Filtros fríos o saturación artificial.</li></ul></div>
+    </div>
+    <p class="cap">Los recuadros de foto son marcadores de dirección, no fotos reales.</p>
+  </section>
+
+  <section class="sec" id="plantillas">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>08-plantillas</b></span><span>08 / 11</span></div>
+      <div class="row"><span class="num">08</span><div><h2>Cómo se arma una pieza</h2><p>Cuatro formatos, cinco niveles de jerarquía y seis plantillas base. Cualquier pieza nueva sale de combinar esto con el kit de la sección 07.</p></div></div>
+    </div>
+    <h3>Formatos y zona segura <small>margen = 6 % del lado corto</small></h3>
+    <div class="formats gridbg">
+      <div class="fm"><div class="f" style="width:120px;height:120px"><div class="safe" style="inset:7px"></div><svg class="logo" style="left:12px;top:12px" viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#FF3B14"/></svg></div><span>1:1 · 1080 × 1080<br>Feed, LinkedIn</span></div>
+      <div class="fm"><div class="f" style="width:120px;height:150px"><div class="safe" style="inset:7px"></div><svg class="logo" style="left:12px;top:12px" viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#FF3B14"/></svg></div><span>4:5 · 1080 × 1350<br>Feed principal</span></div>
+      <div class="fm"><div class="f" style="width:96px;height:171px"><div class="safe" style="left:6px;right:6px;top:24px;bottom:30px"></div><svg class="logo" style="left:11px;top:29px" viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#FF3B14"/></svg></div><span>9:16 · 1080 × 1920<br>Stories, reels</span></div>
+      <div class="fm"><div class="f" style="width:240px;height:135px"><div class="safe" style="inset:8px"></div><svg class="logo" style="left:13px;top:13px" viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#FF3B14"/></svg></div><span>16:9 · 1920 × 1080<br>Slides, web, video</span></div>
+    </div>
+    <p>La línea punteada es la zona segura. En 9:16 quedan libres 250 px arriba y 340 px abajo, donde va la interfaz de la red. La firma va arriba a la izquierda, dentro de la zona segura, o centrada abajo en piezas de cierre.</p>
+    <div class="hier">
+      <ol>
+        <li><b>Rótulo</b><span>Mono, mayúsculas. Qué es la pieza.</span></li>
+        <li><b>Titular</b><span>Rubik Black, máx. 6 palabras.</span></li>
+        <li><b>Dato</b><span>Cifra héroe o fila de datos.</span></li>
+        <li><b>Apoyo</b><span>Geist, 1 o 2 líneas.</span></li>
+        <li><b>Firma y CTA</b><span>Lockup B + botón Brasa.</span></li>
+      </ol>
+      <div class="post p45" style="max-width:320px;justify-self:center;width:100%"><div class="gb"></div><div class="hl" style="width:60%;aspect-ratio:1;right:-15%;top:22%"></div><div class="top"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span>01 · Rótulo</span></div><div style="position:relative;z-index:1"><span class="lbl" style="color:#FFC21A">02 · Novedad</span><h4>Pedidos en<br><em>tiempo real.</em></h4><p style="color:#B8ACA2;font-size:12.5px;margin-top:10px">04 · La cocina ve cada pedido apenas se confirma.</p></div><div class="foot"><span class="mono">blzr.app</span><span class="cta">05 · Probar</span></div></div>
+    </div>
+
+    <h3>Plantillas base <small>T-01 a T-06</small></h3>
+    <div class="pieces">
+      <div class="pc"><div class="post p45"><div class="gb"></div><div class="hl" style="width:70%;aspect-ratio:1;right:-20%;top:15%"></div><div class="top"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span>Novedad</span></div><h4>Tu menú.<br>Tus pedidos.<br><em>Tu cocina.</em></h4><div class="foot"><span>Pedidos directos para restaurantes</span><span class="cta">Probar</span></div></div><div class="cap2"><span>T-01 · Manifiesto</span><span>4:5 · halo + grilla</span></div></div>
+      <div class="pc"><div class="post p45 mz"><div class="top"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-path" fill="#110D0B"/></svg><span class="w">BLZR</span></span><span>Dato</span></div><div style="position:relative"><div class="numx">142</div><p style="color:#3D2A00;font-size:14px;margin-top:8px;font-weight:500">pedidos en un sábado, sin pagar comisión por ninguno.</p></div><div class="foot"><span>Fuente: caso de ejemplo</span><span>01 / 05</span></div></div><div class="cap2"><span>T-02 · Cifra</span><span>4:5 · campo mostaza</span></div></div>
+      <div class="pc"><div class="post p45"><div class="photo"></div><div class="top"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span>Testimonio</span></div><div style="position:relative"><p class="quote">"Pasamos de anotar en papel a ver todo en una pantalla. En hora pico se nota."</p><p style="color:#B8ACA2;font:400 11px/1.5 var(--f-mono);margin-top:12px">NOMBRE · LOCAL, CIUDAD</p></div><div class="foot"><span>Testimonio de ejemplo</span><span></span></div></div><div class="cap2"><span>T-03 · Testimonio</span><span>4:5 · foto clave baja</span></div></div>
+      <div class="pc"><div class="post p916"><div class="gb"></div><div class="hl" style="width:90%;aspect-ratio:1;left:-20%;bottom:10%"></div><div class="top" style="margin-top:8%"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span>Story</span></div><div style="position:relative;z-index:1"><span class="lbl" style="color:#7C9BFF">Paso 2 de 3</span><h4>Cargá tu menú en <em>10 minutos.</em></h4><div class="d-data" style="padding:14px 0 0;font-size:11px"><div><span>Platos</span><b>38</b></div><div><span>Categorías</span><b>6</b></div></div></div><div class="foot" style="margin-bottom:14%"><span></span><span class="cta">Empezar</span></div></div><div class="cap2"><span>T-04 · Story paso a paso</span><span>9:16 · datos</span></div></div>
+      <div class="pc"><div class="post p45 az"><div class="top"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-path" fill="#F6F0E7"/></svg><span class="w">BLZR</span></span><span>Función</span></div><div style="position:relative"><span class="st" style="color:#F6F0E7;border-color:rgba(246,240,231,.5);background:rgba(246,240,231,.08)">Listo</span><h4 style="margin-top:14px">Avisale al cliente sin levantar el teléfono.</h4></div><div class="foot"><span>Notificaciones automáticas</span><span></span></div></div><div class="cap2"><span>T-05 · Función</span><span>4:5 · campo azul + chip</span></div></div>
+      <div class="pc"><div class="post p169"><svg viewBox="0 0 300 170" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><g fill="none" stroke="#FF8A3D" stroke-width=".8"><path d="M-20,160 C60,150 120,95 170,92 C220,89 250,130 320,124" opacity=".8"/><path d="M-20,140 C60,130 120,75 170,72 C220,69 250,108 320,100" opacity=".5"/><path d="M-20,120 C60,110 120,55 170,52 C220,49 250,86 320,76" opacity=".3"/></g><circle cx="170" cy="92" r="3" fill="#FF3B14"/></svg><div class="top"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span>Slide 03</span></div><h4 style="font-size:clamp(20px,2.4vw,26px)">Cada pedido,<br><em>en un solo lugar.</em></h4></div><div class="cap2"><span>T-06 · Slide</span><span>16:9 · curvas de calor</span></div></div>
+    </div>
+    <div class="rule"><b>Pendiente</b>Los números, el testimonio y el dominio de las plantillas son de ejemplo. Cada dato publicado tiene que salir de métricas o clientes reales.</div>
+  </section>
+
+  <section class="sec" id="interfaz">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>09-interfaz</b></span><span>09 / 11</span></div>
+      <div class="row"><span class="num">09</span><div><h2>La interfaz en servicio</h2><p>El panel se usa con las manos ocupadas y en hora pico. Objetivos táctiles de 44 px, estados que se distinguen sin leer y una sola acción encendida por pantalla.</p></div></div>
+    </div>
+
+    <div class="panel-mock">
+      <aside class="side">
+        <span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span>
+        <span class="it on"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21z"/></svg>Pedidos<em>4</em></span>
+        <span class="it"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Menú</span>
+        <span class="it"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Métricas</span>
+        <span class="it"><svg viewBox="0 0 24 24"><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><path d="M9 17.5h6M14 6h3l3 6v5.5M4 12h9V6"/></svg>Reparto</span>
+        <span class="it"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>Ajustes</span>
+      </aside>
+      <div class="kanban">
+        <div class="col"><div class="ch"><span>Nuevos</span><span class="st st-new" style="padding:4px 8px">2</span></div>
+          <div class="oc hot"><div class="t">#0427<span>hace 16 min</span></div><p>2× Smash doble, 1× Papas cheddar</p><span class="st st-late" style="align-self:flex-start">Demorado</span></div>
+          <div class="oc"><div class="t">#0428<span>hace 1 min</span></div><p>1× Milanesa napolitana</p><button class="btn sm b-p" type="button">Aceptar</button></div>
+        </div>
+        <div class="col"><div class="ch"><span>Preparando</span><span class="st st-prep" style="padding:4px 8px">1</span></div>
+          <div class="oc"><div class="t">#0426<span>8 / 15 min</span></div><p>1× Pizza muzzarella, 2× Fainá</p><div class="bar"><i style="width:53%;background:#FFC21A"></i></div></div>
+        </div>
+        <div class="col"><div class="ch"><span>Listos</span><span class="st st-ok" style="padding:4px 8px">1</span></div>
+          <div class="oc"><div class="t">#0425<span>Salón · mesa 7</span></div><p>3× Empanadas de carne</p><button class="btn sm b-g" type="button">Entregar</button></div>
+        </div>
+      </div>
+    </div>
+    <span class="cap">Panel de pedidos · el pedido demorado es el único con halo</span>
+
+    <div class="ui">
+      <span class="k">Botones · variantes × estados</span>
+      <div class="mx-wrap"><div class="matrix">
+        <span></span><span class="h">Reposo</span><span class="h">Hover</span><span class="h">Presionado</span><span class="h">Cargando</span><span class="h">Deshabilitado</span>
+        <span class="h">Primario</span><button class="btn b-p" type="button">Aceptar</button><button class="btn b-p hov" type="button">Aceptar</button><button class="btn b-p act" type="button">Aceptar</button><button class="btn b-p load" type="button" aria-label="Cargando">Aceptar</button><button class="btn b-p" type="button" disabled>Aceptar</button>
+        <span class="h">Secundario</span><button class="btn b-s" type="button">Imprimir</button><button class="btn b-s hov" type="button">Imprimir</button><button class="btn b-s" type="button" style="transform:scale(.97)">Imprimir</button><button class="btn b-s" type="button">···</button><button class="btn b-s" type="button" disabled>Imprimir</button>
+        <span class="h">Fantasma</span><button class="btn b-g" type="button">Detalle</button><button class="btn b-g hov" type="button">Detalle</button><button class="btn b-g" type="button" style="transform:scale(.97)">Detalle</button><button class="btn b-g" type="button">···</button><button class="btn b-g" type="button" disabled>Detalle</button>
+        <span class="h">Peligro</span><button class="btn b-d" type="button">Rechazar</button><button class="btn b-d" type="button" style="background:rgba(255,59,20,.08)">Rechazar</button><button class="btn b-d" type="button" style="transform:scale(.97)">Rechazar</button><button class="btn b-d" type="button">···</button><button class="btn b-d" type="button" disabled>Rechazar</button>
+      </div></div>
+      <div class="row"><button class="btn sm b-p" type="button">Chico · 34</button><button class="btn b-p" type="button">Medio · 44</button><button class="btn lg b-p" type="button">Grande · 52</button></div>
+      <p style="font-size:14px">Primario: uno por pantalla, con halo. Al presionar, escala al 97 % en 90 ms. Los textos de botón son verbos: Aceptar, Despachar, Imprimir.</p>
+    </div>
+
+    <div class="ui">
+      <span class="k">Campos y controles</span>
+      <div class="fields">
+        <div class="field"><span class="lb">Nombre del plato</span><div class="in">Smash doble</div><small>Así lo ve el cliente.</small></div>
+        <div class="field"><span class="lb">Precio</span><div class="in f mono">$ 13.200</div><small>Foco: borde y anillo Brasa.</small></div>
+        <div class="field"><span class="lb">Tiempo de preparación</span><div class="in e mono">0 min</div><small class="err">Poné al menos 1 minuto.</small></div>
+        <div class="field"><span class="lb">Código interno</span><div class="in dis mono">SMD-02</div><small>Lo asigna el sistema.</small></div>
+      </div>
+      <div class="ctl">
+        <span class="seg"><span class="on">Hoy</span><span>7 días</span><span>30 días</span></span>
+        <span style="display:inline-flex;gap:10px;align-items:center;font-size:14px"><span class="sw-t on"></span>Local abierto</span>
+        <span style="display:inline-flex;gap:10px;align-items:center;font-size:14px;color:var(--fg-2)"><span class="sw-t"></span>Delivery pausado</span>
+      </div>
+      <div class="tabs"><span class="on">Activos <i>4</i></span><span>Programados <i>2</i></span><span>Historial</span></div>
+    </div>
+
+    <div class="ui">
+      <span class="k">Métricas</span>
+      <div class="kpis">
+        <div class="kpi"><span class="k">Pedidos hoy</span><b>142</b><span class="d up">+18 % vs. sábado pasado</span><svg viewBox="0 0 100 34" preserveAspectRatio="none"><path d="M0,28 L12,24 L24,26 L36,18 L48,20 L60,12 L72,14 L84,6 L100,8" fill="none" stroke="#FF3B14" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg></div>
+        <div class="kpi"><span class="k">Tiempo medio</span><b>18 min</b><span class="d up">−3 min</span><svg viewBox="0 0 100 34" preserveAspectRatio="none"><path d="M0,8 L14,10 L28,9 L42,15 L56,14 L70,20 L84,22 L100,24" fill="none" stroke="#FFC21A" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg></div>
+        <div class="kpi"><span class="k">Ticket promedio</span><b>$ 14.900</b><span class="d dn">−2 %</span><svg viewBox="0 0 100 34" preserveAspectRatio="none"><path d="M0,14 L14,12 L28,16 L42,13 L56,15 L70,17 L84,16 L100,18" fill="none" stroke="#7C9BFF" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg></div>
+        <div class="kpi"><span class="k">Demorados</span><b style="color:var(--accent-text)">1</b><span class="d" style="color:var(--fg-3)">más de 15 min</span><svg viewBox="0 0 100 34" preserveAspectRatio="none"><path d="M0,30 L20,30 L40,26 L60,30 L80,22 L100,26" fill="none" stroke="#7C7068" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg></div>
+      </div>
+      <span class="cap">Cifras de ejemplo</span>
+    </div>
+
+    <div class="misc">
+      <div class="ui"><span class="k">Notificaciones</span><div class="toast"><span class="tile"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><div><b>Nuevo pedido #0428</b><span>1× Milanesa napolitana · Delivery</span></div></div><div class="toast" style="border-color:rgba(124,155,255,.3)"><span style="width:38px;height:38px;border-radius:10px;background:#2F4BFF;display:grid;place-items:center;flex:none"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><b>Pedido #0425 listo</b><span>Se avisó al cliente por WhatsApp.</span></div></div></div>
+      <div class="ui"><span class="k">Vacío y carga</span><div class="empty"><svg viewBox="4.6 3.8 14.8 16.4"><use href="#iso-path" fill="#7C7068"/></svg><b>Cocina tranquila</b><span>Los pedidos nuevos aparecen acá apenas se confirman.</span></div><div class="skel"><i style="width:40%"></i><i style="width:85%"></i><i style="width:60%"></i></div></div>
+      <div class="ui"><span class="k">Tienda · lo que ve el cliente</span><div class="prod"><div><b>Smash doble</b><span class="ds">Doble carne, cheddar, cebolla caramelizada.</span><em>$ 13.200</em></div><div class="img"><div class="photo"></div><span class="add">+</span></div></div><div class="prod"><div><b>Papas cheddar</b><span class="ds">Con verdeo y panceta.</span><em>$ 5.200</em></div><div class="img"><div class="photo" style="background:radial-gradient(60% 60% at 50% 55%,#8A5E00,#3D2A00 60%,#120A07)"></div><span class="add">+</span></div></div><button class="btn lg b-p" type="button" style="justify-content:space-between;width:100%">Ver pedido · 2 <span class="mono">$ 18.400</span></button></div>
+    </div>
+  </section>
+
+  <section class="sec" id="aplicaciones">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>10-aplicaciones</b></span><span>10 / 11</span></div>
+      <div class="row"><span class="num">10</span><div><h2>Donde vive la marca</h2><p>El celular del encargado, la pantalla de la cocina, la mesa del cliente y la puerta del local. Mismo carbón, mismo fuego.</p></div></div>
+    </div>
+    <div class="apps">
+      <div class="phone">
+        <div class="notif"><span class="tile"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span><div><b>BLZR <small>ahora</small></b><span>Nuevo pedido #0428 · Milanesa napolitana</span></div></div>
+        <div class="home"><i class="ph"></i><i class="ph b"></i><i class="ph"></i><i class="ph b"></i><i class="ph b"></i><span class="hic"><span class="tile"><svg viewBox="0 0 24 24"><use href="#iso-hot"/></svg></span>BLZR</span><i class="ph"></i><i class="ph b"></i><i class="ph"></i><i class="ph b"></i><i class="ph"></i><i class="ph b"></i><i class="ph b"></i><i class="ph"></i><i class="ph b"></i><i class="ph"></i><i class="ph"></i><i class="ph b"></i><i class="ph"></i><i class="ph b"></i></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div class="kds">
+          <div class="bar"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span>Cocina · pantalla 1</span><b>12:42</b></div>
+          <div class="cards">
+            <div class="kc late"><b>#0427 <span>16 min</span></b><p>2× Smash doble<br>1× Papas cheddar<br><span style="color:#FFC21A">sin cebolla</span></p></div>
+            <div class="kc"><b>#0426 <span>8 min</span></b><p>1× Pizza muzzarella<br>2× Fainá</p></div>
+            <div class="kc"><b>#0428 <span>1 min</span></b><p>1× Milanesa napolitana<br>1× Puré</p></div>
+            <div class="kc"><b>#0429 <span>0 min</span></b><p>2× Empanadas de carne</p></div>
+          </div>
+        </div>
+        <span class="cap">Pantalla de cocina 16:9 · el pedido demorado se enciende · notas en mostaza</span>
+      </div>
+    </div>
+    <div class="phys">
+      <div class="ph-item"><small>Sticker de vidriera · 10 cm</small><div class="sticker"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span>Pedí directo acá</span></div></div>
+      <div class="ph-item"><small>Mesa con QR · A6</small><div class="tent"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><div class="qr" id="qr" role="img" aria-label="Código QR de ejemplo"></div><p>Escaneá y pedí desde tu mesa</p><span class="ms">Mesa 07</span></div></div>
+      <div class="ph-item"><small>Mail transaccional</small><div class="mail"><div class="hd"><span class="lock"><svg class="i" viewBox="4.6 4 14 16"><use href="#iso-hot"/></svg><span class="w">BLZR</span></span><span class="n">#0427</span></div><div class="bd"><b>Tu pedido está en camino</b><p>Salió de la cocina de tu local. Llega en unos 20 min.</p><span class="cta">Seguir pedido</span></div></div></div>
+    </div>
+  </section>
+
+  <section class="sec" id="reglas">
+    <div class="sh"><div class="path"><span>blzr://brand/<b>11-reglas</b></span><span>11 / 11</span></div>
+      <div class="row"><span class="num">11</span><div><h2>Para no apagar el fuego</h2></div></div>
+    </div>
+    <div class="dd">
+      <div class="si"><h4>Sí</h4><ul>
+        <li>Carbón como base; el modo claro es la alternativa.</li>
+        <li>Un solo elemento encendido (halo, Núcleo o borde Brasa) por pieza.</li>
+        <li>Números en Geist Mono, con el formato de la sección 05.</li>
+        <li>Estados por temperatura: Brasa, Mostaza, Azul, gris.</li>
+        <li>Elementos del kit con su código (G-01 a G-12).</li>
+      </ul></div>
+      <div class="no"><h4>No</h4><ul>
+        <li>Emojis de fuego, llamas ilustradas o estética naíf.</li>
+        <li>El degradé Núcleo en botones, textos largos o fondos enteros.</li>
+        <li>Sombras grises difusas.</li>
+        <li>Rubik Black en párrafos o en la interfaz.</li>
+        <li>Brasa sobre Mostaza o sobre Azul.</li>
+      </ul></div>
+    </div>
+    <h3>Checklist antes de publicar</h3>
+    <div class="check">
+      <div>El fondo es Carbón, o un campo de color justificado.</div>
+      <div>Hay un solo elemento encendido.</div>
+      <div>El titular tiene 6 palabras o menos.</div>
+      <div>Los datos son reales y tienen fuente.</div>
+      <div>La firma está dentro de la zona segura.</div>
+      <div>Todo el texto pasa 4,5 : 1 de contraste.</div>
+    </div>
+    <h3>Tokens</h3>
+    <pre id="tokens"><span class="c">/* BLZR · tokens v2.0 */</span>
+:root {
+  --blzr-carbon-950: <span class="v">#0B0807</span>;  --blzr-carbon-900: <span class="v">#110D0B</span>;
+  --blzr-carbon-800: <span class="v">#1A1411</span>;  --blzr-carbon-700: <span class="v">#241C18</span>;
+  --blzr-carbon-600: <span class="v">#342923</span>;  --blzr-carbon-400: <span class="v">#7C7068</span>;
+  --blzr-hueso: <span class="v">#F6F0E7</span>;
+  --blzr-brasa: <span class="v">#FF3B14</span>;  --blzr-brasa-profunda: <span class="v">#D42A0A</span>;
+  --blzr-ambar: <span class="v">#FF8A3D</span>;  --blzr-nucleo: <span class="v">#FFE9D6</span>;  --blzr-rescoldo: <span class="v">#C81E08</span>;
+  --blzr-mostaza: <span class="v">#FFC21A</span>;  --blzr-mostaza-800: <span class="v">#8A5E00</span>;
+  --blzr-azul: <span class="v">#2F4BFF</span>;  --blzr-azul-300: <span class="v">#7C9BFF</span>;
+  --blzr-grad-nucleo: radial-gradient(circle at 50% 58%, #FFE9D6 0%, #FF8A3D 32%, #FF3B14 68%, #C81E08 100%);
+  --blzr-encendido: 0 0 0 1px rgba(255,59,20,.55), 0 0 36px -6px rgba(255,59,20,.5);
+
+  --blzr-font-brand: "Rubik", sans-serif;  <span class="c">/* 900 */</span>
+  --blzr-font-ui: "Geist", system-ui, sans-serif;
+  --blzr-font-mono: "Geist Mono", ui-monospace, monospace;
+
+  --blzr-space: 4px;  <span class="c">/* 4 8 12 16 24 32 48 64 96 128 */</span>
+  --blzr-radius-tag: 6px;  --blzr-radius-input: 10px;  --blzr-radius-btn: 12px;  --blzr-radius-card: 14px;
+  --blzr-hit: 44px;
+  --blzr-ease-out: cubic-bezier(.32,.72,0,1);  --blzr-dur-press: 90ms;  --blzr-dur-ignite: 1400ms;
+}</pre>
+    <button class="btn-mini" id="copy" type="button">Copiar tokens</button>
+  </section>
+
+  <footer><span>BLZR · Manual de marca v2.0</span><span>Pendiente: logo final en curvas · datos reales en plantillas</span></footer>
+</div></main>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement,t=document.getElementById('theme');
+  function lab(){t.textContent=root.getAttribute('data-theme')==='light'?'Modo oscuro':'Modo claro'}
+  t.addEventListener('click',function(){if(root.getAttribute('data-theme')==='light')root.removeAttribute('data-theme');else root.setAttribute('data-theme','light');lab()});lab();
+  var ig=document.getElementById('ignite');
+  document.getElementById('replay').addEventListener('click',function(){ig.classList.remove('play');void ig.getBoundingClientRect();ig.classList.add('play')});
+  var p=document.getElementById('pattern'),h='';
+  for(var i=0;i<24;i++){h+='<svg viewBox="4.6 3.8 14.8 16.4">'+(i===13?'<use href="#iso-hot"/>':'<use href="#iso-path" fill="#342923"/>')+'</svg>'}
+  p.innerHTML=h;
+  var q=document.getElementById('qr'),bits='1111111100000110111011101110111011101111111011000001111110010101100110100111001011010110110001011',s='';
+  for(var j=0;j<49;j++){s+='<i'+(bits[j]==='1'?'':' class="o"')+'></i>'}
+  q.innerHTML=s;
+  var c=document.getElementById('copy');
+  c.addEventListener('click',function(){
+    var txt=document.getElementById('tokens').innerText;
+    function done(){c.textContent='Copiado';setTimeout(function(){c.textContent='Copiar tokens'},1600)}
+    function sel(){var r=document.createRange();r.selectNodeContents(document.getElementById('tokens'));var s=getSelection();s.removeAllRanges();s.addRange(r);c.textContent='Seleccionado · ⌘C'}
+    try{navigator.clipboard.writeText(txt).then(done,sel)}catch(e){sel()}
+  });
+})();
+</script>
+
+</html>
